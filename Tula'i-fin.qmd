@@ -11,19 +11,8 @@ execute:
 title-block-published: "last updated"
 editor: visual
 ---
+
 ## Introduction
-
-
-
-
-
-
-
-
-
-
-
-
 
 Cleaning Data:
 
@@ -36,7 +25,6 @@ library(magrittr)
 library(stringr)
 
 ```
-
 
 ```{r}
 # Read the data
@@ -1240,8 +1228,6 @@ unique(tl_final$tooltypegroup)
 
 ```
 
-
-
 ```{r}
 tl_final <- tl_final %>%
   mutate(
@@ -1327,8 +1313,6 @@ tl_final <- tl_final %>%
   ))
 
 ```
-
-
 
 ```{r}
 
@@ -1433,7 +1417,6 @@ print(tl_final)
 
 ```
 
-
 Techno-Typo_exploration
 
 ```{r}
@@ -1450,8 +1433,6 @@ library(dplyr)
 tl_final_area <- tl_final_area %>%
   mutate(al = paste(area, layer, sep = "_"))
 ```
-
-
 
 ```{r}
 # Prepare data for Summary table-area
@@ -1494,8 +1475,6 @@ summary_table <- summary_table %>%
 
 
 ```
-
-
 
 ```{r}
 #Generate summary table-area
@@ -1546,7 +1525,6 @@ summary_table1_layer <- tl_final_area %>%
 
 ```
 
-
 ```{r}
 
 # Define the volumes for each area 
@@ -1592,8 +1570,6 @@ print(summary_table2_area)
 
 ```
 
-
-
 ```{r}
 # layer-Create the summary table
 summary_table2_layer <- tl_final_area %>%
@@ -1619,7 +1595,6 @@ summary_table2_layer <- merge(summary_table2_layer, density_data_layer, by = "la
 
 ```
 
-
 ```{r}
 # generate table 2 - area
 
@@ -1639,8 +1614,6 @@ kable(summary_table2_area,
 
 
 ```
-
-
 
 ```{r}
 
@@ -1712,8 +1685,6 @@ ggplot(tl_final_area_long,
 
 ```
 
-
-
 ```{r}
 
 #Dimension-layer-Boxplot for each Dimension"
@@ -1776,7 +1747,6 @@ ggplot(tl_final_layer_long,
 
 ```
 
-
 ```{r}
 
 #Dimension By Layer
@@ -1792,8 +1762,6 @@ ggplot(tl_final_layer_long,
   theme_minimal()
 
 ```
-
-
 
 ```{r}
 
@@ -1844,8 +1812,6 @@ tl_final_area %>%
 
 ```
 
-
-
 ```{r}
 # Thickness of Artifacts (Layers A, C, E or D)"
 
@@ -1889,7 +1855,8 @@ tl_final_area %>%
 
 ```
 
-Should fix the error 
+Should fix the error
+
 ```{r}
 
 #Length of Artefact based_layers
@@ -1908,9 +1875,9 @@ tl_final_area %>%
 
 ```
 
-1.   (formal + informal) to debitages
-2.  formal  vs. informal
-3.  shine/ sickle  as a  used for processing plants
+1.  (formal + informal) to debitages
+2.  formal vs. informal
+3.  shine/ sickle as a used for processing plants
 
 ```{r}
 
@@ -1947,7 +1914,6 @@ print(summary_table_tool_area)
 
 ```
 
-
 ```{r}
 #plot_blank_type
 
@@ -1968,8 +1934,6 @@ tl_final_area %>%
   ) +
   theme_minimal()
 ```
-
-
 
 WORK ON THIS PART LATER:
 
@@ -2002,8 +1966,6 @@ tl_final_area %>%
   theme_minimal()
 ```
 
-
-
 ```{r}
 
                                        #DO NOT RUN#
@@ -2020,10 +1982,6 @@ tl_final_area %>%
   theme_minimal()
 
 ```
-
-
-
-
 
 ```{r}
 
@@ -2072,8 +2030,7 @@ plot_combined
 
 ```
 
------------- 
-
+------------------------------------------------------------------------
 
 WABI_AREA
 
@@ -2116,6 +2073,3 @@ print(p)
 
 
 ```
-
-
-
