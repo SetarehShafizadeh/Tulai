@@ -1,6 +1,6 @@
 ---
 title: "Tulai"
-author: ""
+author: "S.SH"
 date: now
 format: 
   html:
@@ -11,14 +11,6 @@ execute:
 title-block-published: "last updated"
 editor: visual
 ---
-```{r}
-library(usethis)
-3
-usethis::use_git()
-
-```
-
-
 
 ```{r}
 # library
@@ -208,7 +200,7 @@ ggplot() +
 
 ```{r}
 #exploring Data
-
+# barplot of lithic frequency based on layers
 
 tl1 %>% 
   group_by(layer) %>% 
@@ -225,9 +217,8 @@ ggplot() +
 tl2 <- tl1 %>%
   mutate(
     Blank = case_when(
-      Breakage %in% c("0", "1", NA_character_) ~ Blank,  
-      
-      TRUE ~ Breakage  
+      Breakage %in% c("0", "1", NA_character_) ~ Blank,  # If Breakage is 0, 1, or NA, keep Blank unchanged
+      TRUE ~ Breakage  # If Breakage is other than 0, 1, or NA, transfer its value to Blank
     )
   )
 
@@ -1082,7 +1073,7 @@ ggplot() +
 ```
 
 ```{r}
-# convert all columns to character type (I DONT KNOW WHY I DID THIS!)
+# First convert all columns to character type
 tl4 <- tl4 %>%
   mutate(across(everything(), as.character))
 
@@ -1157,7 +1148,7 @@ tl_final <- tl_final  %>%
 ```
 
 ```{r}
-# Update the 'typology-tool-core' column based on 'Retouch'
+# Update the 'typology-tool-core' column based on the condition in 'Retouch'
 tl_final <- tl_final %>% 
   mutate(
     `typology-tool-core` = case_when(
@@ -1213,7 +1204,7 @@ unique(tl_final$`tool-typology`)
 
 ```{r}
 
-# Creating tooltypegroup
+# Creating tooltypegroup based on the given criteria
 
 tl_final <- tl_final %>%
   mutate(
@@ -1253,13 +1244,13 @@ unique(tl_final$tooltypegroup)
 tl_final <- tl_final %>%
   mutate(
     `core-fragment` = if_else(
-      !is.na(`core-typology`),  
-      NA_character_,            
-      `core-fragment`           
+      !is.na(`core-typology`),  # If core-typology is not NA
+      NA_character_,            # Set core-fragment to NA
+      `core-fragment`           # Otherwise, keep the original value
     )
   )
 
-
+# Show updated data frame
 print(tl_final)
 
 ```
@@ -1337,6 +1328,100 @@ tl_final <- tl_final %>%
 
 ```{r}
 
+                   #DO NOT RUN#############
+
+
+
+
+
+
+
+library(dplyr)
+library(stringr)
+
+tl_final <- tl_final %>%
+  mutate(
+    `core-fragments` = str_to_lower(`core-fragment`),
+    `core-fragments` = str_trim(`core-fragment`),
+    `core-fragments` = str_replace_all(`core-fragment`, "^[-._/NA\\s]*$|^\\s*$", "0")
+  ) %>%
+  mutate(`core-fragment` = case_when(
+    
+            `core-fragment` == "rejuvenation piece" ~ "rejuvenation piece"
+             
+            `core-fragment` == "crested bladelet" ~ "crested bladelet",
+             
+            `core-fragment` == "crested bladelet" ~ "crested bladelet",
+            
+            `core-fragment` == "primaryflake" ~ "primary flake",
+            `core-fragment` == "primary flake" ~ "primary flake",
+            
+            `core-fragment` == "primary blade" ~ "primary blade",
+          
+            `core-fragment` == "rejuvenationpiece-side" ~ "rejuvenation piece-side",
+            `core-fragment` == "rejuvention piece-side" ~ "rejuvenation piece-side",
+            
+            `core-fragment` == "core preparation piece-platform" ~ "core tablet",
+             
+            `core-fragment` == "core preparation" ~ "rejuvenation piece", 
+             
+            `core-fragment` == "core preparation piece" ~ "rejuvenation piece",
+             
+            `core-fragment` == "core preperation" ~ "rejuvenation piece",
+             
+            `core-fragment` == "pyramid" ~ "pyramid",
+             
+            `core-fragment` == "pyramid core" ~ "pyramid",
+             
+            `core-fragment` == "pyramid-unidirectional" ~ "pyramid",
+             
+            `core-fragment` == "core fragment-pyramid" ~ "pyramid",
+             
+            `core-fragment` == "cylinder" ~ "cylinder/prismatic",
+            
+            `core-fragment` == "prismatic" ~ "cylinder/prismatic",
+             
+            `core-fragment` == "shapeless" ~ "cylinder/prismatic",
+              
+            `core-fragment` == "multidirectional core fragment" ~ "shapeless",
+            `core-fragment` == "multidirectionalcore fragment" ~ "shapeless",
+            `core-fragment` == "multidirectionalbladelet core" ~ "shapeless",
+             
+            `core-fragment` == "multidirectional flake core" ~ "shapeless",
+             
+            `core-fragment` == "multidirectional bladelet core" ~ "shapeless",
+              
+            `core-fragment` == "mixed core" ~ "shapeless",
+             
+            `core-fragment` == "mixed-percussion" ~ "shapeless",
+             
+            `core-fragment` == "mixed" ~ "shapeless",
+             
+            `core-fragment` == ("bipolar-percussion") ~ "cylinder/prismatic-percussion",
+             
+            `core-fragment` == "flat" ~ "flat",
+             
+            `core-fragment` == "core on flake" ~ "core on flake",
+             
+            `core-fragment` == "bullet" ~ "bullet",
+            
+            `core-fragment` == "core platform rejuvention" ~ "core tablet",
+            `core-fragment` == "bipolar" ~ "cylinder/prismatic",
+             `core-fragment` == "coretablet" ~ "core tablet",
+            `core-fragment` == "crestedbladelet" ~ "crested piece",
+            `core-fragment` == "coreon flake" ~ "core on flake",
+            `core-fragment` == "corefragment-pyramid" ~ "pyramid",
+            `core-fragment` == "corepreparation piece-platform" ~ "core tablet",
+            
+
+    
+    TRUE ~ `core-fragment`
+  ))
+
+unique(`tl_final`$`core-fragment`)
+```
+
+```{r}
 
 tl_final <- tl_final %>%
   mutate(
@@ -1409,7 +1494,7 @@ unique(tl_final$`core`)
 
 library(dplyr)
 
-
+# Process the tl_final_area dataframe using pipe (%>%)
 tl_final <- tl_final %>%
   # Transfer 'rejuvenation piece' and 'core fragment' from `core-typology` to `corefrag`
   mutate(corefrag = case_when(
@@ -1417,7 +1502,7 @@ tl_final <- tl_final %>%
     `core-typology` == "core fragment" ~ "core fragment",
     TRUE ~ corefrag
   )) %>%
-  # Remove 'rejuvenation piece' and 'core fragment' from `core-typology` 
+  # Remove 'rejuvenation piece' and 'core fragment' from `core-typology` but keep the column
   mutate(`core-typology` = if_else(`core-typology` %in% c("rejuvenation piece", "core fragment"), NA_character_, `core-typology`))
 
 unique(tl_final$`core-typology`)
@@ -1439,7 +1524,7 @@ tl_final <- tl_final %>%
     NA_character_, 
     blank))
 
-
+# Show the updated data
 print(tl_final)
 unique(tl_final$`core-fragment`)
 unique(tl_final$`blank`)
@@ -1463,7 +1548,7 @@ summary_table_area <- tl_final %>%
     `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
   )
 
-
+# Show summary table
 print(summary_table_area)
 
 
@@ -1558,8 +1643,8 @@ tl_final <- tl_final %>%
 summary_table_depth <- tl_final %>%
   group_by(depth) %>%  
   summarise(
-    `Cores (n)` = sum(!is.na(core)),  
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
+    `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
     `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
     `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
     `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
@@ -1589,8 +1674,8 @@ kable(summary_table_depth,
 summary_table_depth_area_layer <- tl_final %>%
   group_by(depth, area, layer, upper, lower) %>%  
   summarise(
-    `Cores (n)` = sum(!is.na(core)),  
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
+    `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
     `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
     `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
     `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
@@ -1622,7 +1707,7 @@ tl_final_area <- tl_final %>%
 ```
 
 ```{r}
-
+# Load dplyr library
 library(dplyr)
 
 # Prepare data for Summary table-area
@@ -1721,7 +1806,7 @@ kable(summary_table_al,
 ```
 
 ```{r}
-#summary table-area
+#Generate summary table-area
 
 library(knitr)
 library(dplyr)
@@ -1785,17 +1870,22 @@ summary_table_tool_area <- tl_final_area %>%
 summary_table_tool_area <- summary_table_tool_area %>%
   mutate(Total = rowSums(select(., -tooltypegroup)))
 
-
+# Create a row that contains the column totals, and append it to the table
 total_row <- summary_table_tool_area %>%
   select(-tooltypegroup) %>%
   summarise(across(everything(), sum, na.rm = TRUE)) %>%
   mutate(tooltypegroup = "Total")
 
-
+# Combine the total_row with the original table
 summary_table_tool_area <- bind_rows(summary_table_tool_area, total_row)
 
-
+# View the summary table
 print(summary_table_tool_area)
+
+```
+
+```{r}
+
 
 ```
 
@@ -1809,7 +1899,7 @@ kable(summary_table_tool_area,
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
                 full_width = F, 
                 font_size = 12) %>%
-  column_spec(1, extra_css = "text-align:left;") %>%  
+  column_spec(1, extra_css = "text-align:left;") %>%  # Make the first column left-aligned
   row_spec(0, bold = TRUE, font_size = 14)
 
 ```
@@ -1827,10 +1917,10 @@ summary_table1_layer <- tl_final_area %>%
 
 ```
 
-volume for each area:
+volume for each area-layer: Ta-
 
 ```{r}
-# Define the volumes for each area 
+# Define the volumes for each area based on the given information
 volumes <- data.frame(
   area = c("ta", "tp1", "d1"),
   volume = c(52, 5.76, 2.1375) # in m^3
@@ -1948,7 +2038,7 @@ kable(summary_table2_area,
 ```{r}
 
 
-                                            ##### DO NOT RUN ######
+                                                      ##### DO NOT RUN ######
 
 
 # layer-Create the summary table
@@ -1973,1548 +2063,6 @@ summary_table2_layer <- merge(summary_table2_layer, density_data_layer, by = "la
 
 
 
-```
-
-WABI_AL Ta-e → 13 m3 Ta-d → 45 m3 D1-c → 0.675 m3 Tp-c → 1.44 m3 D1-a → 1.575 m3
-
-```{r}
-# Create a tibble with example data
-summary_table2_area <- tibble(
-  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
-  lithic_volumetric_density = c(51.2, 110.9, 45.1, 100.2, 88.3),
-  percent_retouch = c(4.9, 9.3, 15.3, 18.0, 9.8)
-)
-
-```
-
-```{r}
-
-library(tidyverse)
-library(ggpmisc)
-
-# Create the data frame
-summary_table2_area <- tibble(
-  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
-  lithic_volumetric_density = c(51.43, 111.11, 45.13, 100.08, 212.50),
-  retouch_frequency = c(0.05, 0.09, 0.07, 0.07, 0.10)
-)
-
-# Create the ggplot
-p <- ggplot(summary_table2_area, 
-            aes(x = lithic_volumetric_density,
-                                     y = retouch_frequency)) +
-  
-  # Add points
-  geom_point(color = 
-               "black", 
-             size = 2) +
-  
-  # line with log scale
-  stat_smooth(method = "lm", 
-              formula = y ~ log(x), 
-              se = TRUE, aes(group = 1), 
-              color = "blue", 
-              size = 0.5) +
-
-  # Add text labels for each point
-  geom_text(aes(label = area), 
-            vjust = -1, 
-            hjust = -0.5, 
-            size = 2.5) +
-  
-  # Add regression equation, R-squared, and p-value
-  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
-               formula = y ~ log(x), 
-               parse = TRUE, 
-               size = 2) +
-  
-  # Add titles and labels
-  labs(
-    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-    x = "Lithic Volumetric Density",
-    y = "Retouch Frequency"
-  ) +
-  
-  
-  scale_x_log10() +
-  
-  theme(
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 12)
-  )
-
-print(p)
-
-```
-
-```{r}
-
-library(googlesheets4)
-
-data_sheet <- "https://docs.google.com/spreadsheets/d/16yLb-RyIQ7x2jFEH_Q7OZYTwlEAXJgFu/edit#gid=2014421097" 
-
-
-sum_depth_sheet <- read_sheet(data_sheet, sheet = "sum_depth")
-
-
-```
-
-WABI_AREA
-
-```{r}
-# regression plot-area
-library(ggplot2)
-library(ggpmisc)
-
-# Plotting
-p <- ggplot(summary_table2_area, aes(x = lithic_volumetric_density, y = percent_retouch)) +
-  
-  # Blue regression line with shaded area
-  geom_smooth(method = "lm", 
-              se = TRUE, 
-              aes(group = 1), 
-              color = "blue") +
-  
-  # Points colored by area
-  geom_point(color = "black") + 
-
-  # Labels points with area names
-  geom_text(aes(label = area),
-            vjust = -1, 
-            hjust = -0.5) +  
-  
-  # Regression equation, R-squared, and p-value
-  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
-               formula = y ~ x,
-               parse = TRUE,
-               size = 3) +
-  
-  # Titles and labels
-  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-       x = "Lithic Volumetric Density",
-       y = "Retouch Frequency (%)")
-
-print(p)
-
-
-```
-
-```{r}
-# Fit the linear model
-linear_model <- lm(percent_retouch ~ lithic_volumetric_density, data = summary_table2_area)
-
-# Display the summary of the model to get coefficients, R-squared, and p-value
-summary_linear_model <- summary(linear_model)
-
-# Extract the coefficients (intercept and slope)
-coefficients <- summary_linear_model$coefficients
-
-# Extract the R-squared value
-r_squared <- summary_linear_model$r.squared
-
-# Extract the p-value for the slope (lithic_volumetric_density)
-p_value_slope <- coefficients["lithic_volumetric_density", "Pr(>|t|)"]
-
-cat("Coefficients:\n")
-print(coefficients)
-
-cat("\nR-squared value:", r_squared)
-
-cat("\nP-value for slope:", p_value_slope)
-
-```
-
-```{r}
-#whole assemblage
- 
-  # Summarize data by Area
-summary_table_tech <- tl_final_area %>%
-  group_by(area) %>% 
- 
-  summarise(
-   blade_count = sum(blank == "blade", na.rm = TRUE),
-    flake_count = sum(blank == "flake", na.rm = TRUE),
-    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
-
-    
-    bullet_core_count = sum(`core-typology` == "bullet", na.rm = TRUE),
-    flat_core_count = sum(`core-typology` == "flat", na.rm = TRUE),
-    pyramid_core_count = sum(`core-typology` == "pyramid", na.rm = TRUE),
-    cylinder_core_count = sum(`core-typology` %in% c("prismatic", "cylinder"), na.rm = TRUE),
-    shapeless_core_count = sum(`core-typology` == "shapeless", na.rm = TRUE),
-    
-    core_fragment_count = sum(`corefrag` == "core fragment", na.rm = TRUE),
-    core_rejuvention_count = sum(`corefrag` == "rejuvenation piece", na.rm = TRUE),
-    core_tablet_count = sum(`corefrag` == "core tablet", na.rm = TRUE),
-    core_crested_count = sum(`corefrag` == "crested bladelet", na.rm = TRUE),
-    core_primarypiece_count = sum(`corefrag`  %in% c("primary flake", "primary blade"), na.rm = TRUE),
-  
-   total = n()
-  )
-```
-
-```{r}
-#plot_blank_type
-
-library(dplyr)
-library(ggplot2)
-library(ggbeeswarm)
-
-# Data filtering and plotting
-tl_final_area %>% 
-  filter(blank %in% c('bladelet', 'blade', 'flake')) %>%
-  ggplot(aes(x = area, fill = blank)) +
-  geom_bar(position = "dodge") +
-  labs(
-    x = "Area",
-    y = "Number",
-    fill = "Blank Type"
-  ) +
-  theme_minimal()
-
-```
-
-```{r}
-
-library(dplyr)
-library(ggplot2)
-
-# Filter the data for the relevant categories
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% 
-           c("bladelet", 
-             "blade", 
-             "flake"))
-
-# Create separate bar plots for shine, Retouch, and Utilization
-plot_shine2 <- ggplot(tl4_filtered, aes(x = Blank2, fill = shine2)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Shine2 by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Shine2") +
-  theme_minimal()
-
-plot_retouch <- ggplot(tl4_filtered, aes(x = Blank2, fill = Retouch)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Retouch by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Retouch") +
-  theme_minimal()
-
-plot_utilization <- ggplot(tl4_filtered, aes(x = Blank2, fill = Utilization)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Utilization by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Utilization") +
-  theme_minimal()
-
-# Combine the three plots side by side
-library(patchwork)
-combined_plots <- plot_shine2 + plot_retouch + plot_utilization
-combined_plots
-
-
-
-```
-
-```{r}
-library(dplyr)
-library(knitr)
-library(kableExtra)
-
-#table
-
-tl_final_aread <- tl_final_area %>%
-  filter(blank %in% c("bladelet", "blade", "flake"))  %>%
-
-
-
-  group_by(blank, utilization, `sickle shine`, retouch) %>%
-  summarise(count = n())
-
-
-table_kable <- kable(table_summary, format = "html", caption = "Summary Table", 
-                     col.names = c("Blank2", "Utilization", "shine2", "Retouch", "Count")) %>%
-  kable_styling(bootstrap_options = "striped")
-
-
-print(table_kable)
-
-```
-
-```{r}
-#|label: fig_
-#|fig-cap: "Boxplot for each Dimention"
-#|fig-height: 5
-
-library(dplyr)
-library(ggplot2)
-
-# Filter the data to keep only bladelet, blade, and flake in the Blank column
-tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake"))
-
-tl4_tool_Blank_tally <- 
-  tl4_tool_Blank_filtered %>%
-  group_by(Blank2) %>%
-  tally()
-
-# Select dimensions and convert Thickness (mm) to numeric
-tl4_tool_Blank_selected <- 
-  tl4_tool_Blank_filtered %>% 
-  select(Blank2, 
-         Utilization, 
-         Retouch, 
-         shine2) 
-
-
-tl4_tool_Blank_long <- 
-  tl4_tool_Blank_selected %>% 
-  pivot_longer(cols = c(Utilization, Retouch, shine2), 
-               names_to = "Blank2", 
-               values_to = "Value")
-
-# Create boxplot
-ggplot(tl4_tool_Blank_long, aes(x = Blank2, y = Value)) +
-  geom_boxplot() +
-  facet_wrap(~Blank2, scales = "free") +
-  labs(x = "Blank", 
-       y = "Frequency") +
-  theme_minimal()
-
-
-
-
-
-
-```
-
-```{r}
-library(dplyr)
-library(ggplot2)
-
-# Filter the data to keep only bladelet, blade, and flake in the Blank2 column
-tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake"))
-
-tl4_tool_Blank_tally <- 
-  tl4_tool_Blank_filtered %>%
-  group_by(Blank2) %>%
-  tally()
-
-# Select dimensions and convert Thickness (mm) to numeric
-tl4_tool_Blank_selected <- 
-  tl4_tool_Blank_filtered %>% 
-  select(Blank2, 
-         Utilization, 
-         Retouch, 
-         shine2) 
-
-# Manually rename the duplicate columns
-names(tl4_tool_Blank_selected)[names(tl4_tool_Blank_selected) == "Blank2"] <- "Dimension"
-
-# Pivot data to longer format
-tl4_tool_Blank_long <- 
-  tl4_tool_Blank_selected %>% 
-  pivot_longer(cols = c(Utilization, Retouch, shine2), 
-               names_to = "", 
-               values_to = "Value")
-
-
-ggplot(tl4_tool_Blank_long, aes(x = Dimension, y = Value)) +
-  geom_boxplot() +
-  facet_wrap(~, scales = "free") +
-  labs(x = "Blank", 
-       y = "Frequency") +
-  theme_minimal()
-
-```
-
-```{r}
-
-# Load required packages
-library(ggplot2)
-
-# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("blade", "bladelet", "flake"))
-
-# Create the plot with facetting
-tl4_plots <- ggplot(tl4_filtered, aes(x = Blank2, fill = Blank2)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Utilization, Retouch, and shine2 by Blank",
-       x = "Blank2",
-       y = "Count") +
-  facet_grid(. ~ Blank2, scales = "free") +
-  theme_minimal()
-
-
-print(tl4_plots)
-
-```
-
-```{r}
-# Load required packages
-library(ggplot2)
-library(cowplot)
-
-# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("blade", "bladelet", "flake"))
-
-# Plot Utilization by Blank2
-plot_utilization <- ggplot(tl4_filtered, aes(Blank2, Utilization)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Utilization by Blank",
-       x = "Blank2",
-       y = "Utilization") +
-  theme_minimal()
-
-# Plot Retouch by Blank
-plot_retouch <- ggplot(tl4_filtered, aes(Blank2, Retouch)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Retouch by Blank",
-       x = "Blank2",
-       y = "Retouch") +
-  theme_minimal()
-
-# Plot shine by Blank
-plot_shine <- ggplot(tl4_filtered, aes(x = Blank2, y = shine2)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "shine by Blank",
-       x = "Blank2",
-       y = "shine2") +
-  theme_minimal()
-
-# Combine the plots using cowplot or patchwork
-plot_combined <- cowplot::plot_grid(plot_utilization, plot_retouch, plot_shine, ncol = 3)
-
-
-print(plot_combined)
-
-```
-
-```{r}
-
-#|label: fig_
-#|fig-cap:  vs Debitage
-#|fig-height: 5
-
-# Filter data
-tl4__blank %>% 
-  filter(Blank2 %in% c('tp1', 'ta', 'd1')) %>% 
-  select(Blank2, 
-         `Width (mm)`, 
-         `Thickness (mm)`, 
-         `Length (mm)`) %>%
-mutate(`Thickness (mm)` = as.numeric(`Thickness (mm)`))
-
-# Pivot data to longer format
-long_data <- tl3_dimention_blank %>% 
-  pivot_longer(cols = c(`Width (mm)`, `Thickness (mm)`, `Length (mm)`), 
-               names_to = "Dimension", 
-               values_to = "Value")
-
-# Create boxplot
-ggplot(long_data, aes(x = area, y = Value)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap(~Dimension, scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-
-
-```
-
-```{r}
-library(ggbeeswarm)
-tl3_dimention_blank <- tl3 %>% 
-  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
-  pivot_longer(-area) %>% 
-  ggplot() +
-  aes(area,
-      value) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap( ~ name,
-              scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-  
-```
-
-```{r}
-library(ggbeeswarm)
-tl3 %>% 
-  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
-  pivot_longer(-area) %>% 
-  ggplot() +
-  aes(area,
-      value) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap( ~ name,
-              scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-```
-
-```{r}
-#| label: fig-Width-of-Artifacts-Area-A-by-depth
-#| fig-cap: "Width of Artifacts by depth (Area A)"
-#| fig-height: 5
-tl %>%
-  filter(AREA == "A") %>%
-  select(
-         `Width (mm)`,
-         `DEPTH (cm)`) %>%
-  ggplot() +
-  aes(x = `DEPTH (cm)`,
-      y = `Width (mm)`) +
-  geom_boxplot() +
-  theme_minimal()
-```
-
-```{r}
-#| label: Width of Artifacts (Area A)
-#| fig-cap: "Width of Artifacts (Area A)"
-#| fig-height: 5
-
-tl1 %>%
-  filter(AREA == "TP1") %>%
-  select(AREA, `Width (mm)`) %>%
-  ggplot() +
-  aes(x = `Width (mm)`) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Width of Debitage (mm)", 
-       y = "Frequency", 
-       title = "Histogram of Width for Area TP1" )+
-  theme_minimal()
-```
-
-WABI:
-
-```{r}
-# regression plot-layer
-library(ggplot2)
-library(ggpmisc)
-
-# Plotting
-p <- ggplot(summary_table2_layer, 
-            aes(lithic_volumetric_density, 
-                percent_retouch)) +
-  
- 
-  geom_smooth(method = "lm", 
-              se = TRUE, 
-              aes(group = 1), 
-              color = "blue") +
-  
-  # Points colored by layer
-  geom_point(color = "black") + 
-
-  # Labels points with layer names
-  geom_text(aes(label = layer),
-            vjust = -1, 
-            hjust = -0.5) +  
-  
-  # Regression equation, R-squared, and p-value
-  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
-               formula = y ~ x,
-               parse = TRUE,
-               size = 3) +
-  
-  # Titles and labels
-  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-       x = "Lithic Volumetric Density",
-       y = "Retouch Frequency (%)")
-
-print(p)
-```
-
-```{r}
-#barplot_layer
-
-tl_final_area %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
-  filter(!is.na(corefrag)) %>% 
-  select(layer, corefrag) %>%
-  ggplot() +
-  aes(x = corefrag) +
-  geom_bar() +  
-  labs(x = "Core and Core fragments", y = "Frequency") +
-  facet_wrap(~layer, ncol = 1) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-
-
-```
-
-```{r}
-#Core-barplot_area
-
-tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  filter(!is.na(corefrag)) %>% # Exclude rows where corefrag is NA
-  select(area, corefrag) %>%
-  ggplot() +
-  aes(x = corefrag) +
-  geom_bar() +
-  labs(x = "Core and Core fragments",
-       y = "Frequency") +
-  facet_wrap(~area, ncol = 1) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-```{r}
-
-library(ggplot2)
-library(dplyr)
-filtered_data <- tl_final %>%
-  filter(!is.na(`tool-typology`) & `tool-typology` != "" & `tool-typology` != "NA")
-ggplot(data = filtered_data) + 
-  aes(y = `tool-typology`) + 
-  geom_bar() +
-  labs(x = "Frequency",
-       y = "Tool Type") +
-  theme_minimal() +
-  theme(axis.text.y = element_text(angle = 20, hjust = 1, vjust = 0.5))
-        
-
-
-
-```
-
-```{r}
-
-filtered_data <- tl_final %>%
-  filter(!is.na(``) & `` != "")
-
-# Create the plot using the filtered data
-ggplot(data = filtered_data) + 
-  aes(y = ``) + 
-  geom_bar() +
-  labs(y = "Tool Type",
-       x = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-```{r}
-
-```
-
-PCA-LAYER
-
-```{r}
-#prepare the data for PCA-layer
-
-# Calculating Blank Frequency
-blank_freq <- tl_final_area %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
-  group_by(layer) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final_area %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(corefrag)) %>%
-  group_by(layer) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(tooltypegroup)) %>%
-  group_by(layer) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-# Combining all the calculated frequencies into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer")
-
-# Printing the final table
-print(final_table)
-
-```
-
-```{r}
-# Blank Frequency
-blank_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
-  group_by(layer) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "e or d")) %>%
-  group_by(layer) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / n(), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "e or d"), !is.na(tooltypegroup)) %>%
-  group_by(layer) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-# Calculating Retouch Frequency
-retouch_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
-  group_by(layer) %>%
-  summarise(retFreq = sum( == "retouched piece", na.rm = TRUE) / n(), .groups = 'drop')
-
-
-
-# Combining all the calculated frequencies, including retouch frequency, into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer") %>%
-  inner_join(retouch_freq, by = "layer") 
-
-
-# Printing the final table
-print(final_table)
-
-```
-
-```{r}
-# Joining calculated frequencies
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer") %>%
-  inner_join(retouch_freq, by = "layer")
-
-# Converting layer to row names
-final_table_rownames <- final_table %>%
-  column_to_rownames(var = "layer")
-
-```
-
-```{r}
-# Compute the PCA
-library(FactoMineR)
-
-res_pca <-
-  PCA(final_table_rownames,
-      graph = FALSE)
-
-```
-
-```{r}
-library(factoextra)
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca,
-             axes = 1,   
-             choice = "var") 
-
-```
-
-```{r}
-library(factoextra)
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca,
-             axes = 2,   
-             choice = "var") 
-
-```
-
-```{r}
-library(factoextra)
-
-# Creating a biplot
-fviz_pca_biplot(res_pca)
-```
-
-```{r}
-library(factoextra)
-fviz_screeplot(res_pca)
-```
-
-```{r}
-fviz_pca_var(res_pca)
-```
-
-```{r}
-
-library(FactoMineR)
-library(factoextra)
-
-# Run PCA
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca, axes = 1, choice = "var") 
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca, axes = 2, choice = "var")
-
-# Visualize eigenvalues and explained variance
-fviz_screeplot(res_pca)
-
-# Create a biplot of the PCA
-fviz_pca_biplot(res_pca)
-
-# Visualize the variables on the principal components
-fviz_pca_var(res_pca)
-
-
-```
-
-```{r}
-
-library(FactoMineR)
-library(factoextra)
-
-# Run PCA
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-# Get the loadings (coefficients) of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-# Print the loadings matrix
-print(loadings_matrix)
-
-```
-
-```{r}
-#Table
-
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-
-# Variance percent
-variance_percent <- res_pca$eig[1:2, 2]
-
-# Cumulative variance percent
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-# Print the table
-print(df)
-
-```
-
-```{r}
-#Table 
-
-library(gt)
-
-# Create data frame
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-rownames(df) <- c("Dim1", "Dim2")
-
-# Create the table using gt
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = vars(Eigenvalue, Variance_Percent, Cumulative_Variance_Percent),
-    decimals = 2
-  )
-
-
-```
-
-calculating PCA based on AREA: TA/ TP1/ D1:
-
-```{r}
-#4lithic density
-
-
-# A→ V=4×5×2.6 = 52 m3
-# TP → V=2×1.8×1.6 = 5.76 m 3
-# D1 → 1.5×1.5×0.95 = 2.1375 m3
-
-library(dplyr)
-
-# Define the volumes for each area based on the given information
-volumes <- data.frame(
-  area = c("ta", "tp1", "d1"),
-  volume = c(52, 5.76, 2.1375) # in m^3
-)
-
-# Count the number of artifacts by area
-artifact_counts <- tl_final_area %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Join artifact_counts with volumes by area
-lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
-
-# Compute lithic density for each area
-lithic_density_df <- lithic_density_df %>%
-  mutate(lithic_density = n / volume) # number of artifacts / volume
-
-# Print the resulting table
-print(lithic_density_df[, c("area", "lithic_density")])
-
-```
-
-```{r}
-
-#2 Calculate the frequency of cores and core fragments by area
-
-library(dplyr)
-# Calculate the core frequency
-core_frequency_by_area <- left_join(number_of_cores_by_area, 
-                                    total_lithics_by_area, 
-                                    by = "area") %>%
-  mutate(core_frequency = (number_of_cores / total_lithics) * 100)
-
-# Display the result
-print(core_frequency_by_area)
-
-```
-
-```{r}
-# 1number of Blank
-
-# Calculate the total number of lithic artifacts
-total_lithics <- tl_final_area %>%
-  summarise(total_lithics = n()) %>%
-  pull(total_lithics)
-
-# Display the total number of lithic artifacts
-print(paste("The total number of lithic artifacts is:", total_lithics))
-
-
-```
-
-```{r}
-# 5Calculate the retouched frequency for each area
-library(dplyr)
-
-
-total_lithics_by_area <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(total_lithics = n())
-
-number_of_retouched_by_area <- tl_final_area %>%
-  mutate(retouch = as.numeric(`retouch`)) %>% 
-  filter(!is.na(retouch), retouch == 1) %>%  
-  group_by(area) %>%  
-  summarise(number_of_retouched = sum(retouch))
-
-retouched_frequency_by_area <- left_join(number_of_retouched_by_area, total_lithics_by_area, by = "area") %>%
-  mutate(retouched_frequency = (number_of_retouched / total_lithics) * 100)
-
-# Display the retouched frequency by area
-print(retouched_frequency_by_area)
-
-
-
-
-print(number_of_retouched_by_area)
-
-```
-
-```{r}
-# 3Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final_area %>%
-  filter(area %in% c("ta", "d1", "tp1"), 
-         !is.na(tooltypegroup)) %>%
-  group_by(area) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-```
-
-feature frequency: d1 1 ta 1 tp1 0)
-
-estimated volumes (area) A→ 52 m3 TP → 5.76 m 3 D1 → 2.1375 m3
-
-```{r}
-library(dplyr)
-library(FactoMineR)
-library(tibble)
-
-# Define estimated area and feature frequency data
-area_data <- tibble(
-  area = c("d1", "ta", "tp1"),
-  estimated_area = c(2.1375, 52, 5.76),
-  feature_freq = c(1, 1, 0)
-)
-
-
-
-# Step 1: Number of artifacts by area
-artifact_counts <- tl_final_area %>%
-  group_by(area) %>%
-  tally()
-
-# Step 2: Calculate each variable
-
-# Retouch Frequency 
-retouch_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(retouchFreq = mean(!is.na(retouch)), .groups = 'drop')
-
-# Blank Frequency
-blank_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(blankFreq = mean(!is.na(blank)), .groups = 'drop')
-
-# Core Frequency
-core_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(coreFreq = mean(!is.na(`core-typology`)),.groups = 'drop')
-
-# Lithic density (Artifact counts / estimated area)
-lithic_density <- artifact_counts %>%
-  left_join(area_data, by = "area") %>%
-  mutate(lithic_density = n / estimated_area)
-
-# Tool Diversity using Menhinick's Index
-tool_div <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(n()), .groups = 'drop')
-
-# Step 3: Combining all variables 
-
-pca_final_table_area <- left_join(area_data, retouch_freq, by = "area") %>%
-  left_join(blank_freq, by = "area") %>%
-  left_join(core_freq, by = "area") %>%
-  left_join(lithic_density, by = "area") %>%
-  left_join(tool_div, by = "area") %>%
-  select(area, estimated_area, feature_freq, retouchFreq, blankFreq, coreFreq, lithic_density, toolDiv) 
-
-
-
-
-
-```
-
-```{r}
-pca_final_table_area <- pca_final_table_area %>%
-    select(
-        area, 
-        estimated_area = estimated_area.x, 
-        feature_freq = feature_freq.x, 
-        retouchFreq, 
-        blankFreq, 
-        coreFreq, 
-        n, 
-        lithic_density, 
-        toolDiv
-    )
-
-```
-
-```{r}
-# Step 4: Perform PCA
-res_pca_area <- PCA(pca_final_table_area %>% select(-area, -n), graph = FALSE)
-
-
-# Show the summary of PCA
-print(res_pca_area)
-
-
-print(res_pca_area$eig)
-print(res_pca_area$var$coord)
-```
-
-```{r}
-# TABLE: Eigenvalues and percentage of variance for each dimension of PCA 
-library(kableExtra)
-
-# Define the values manually (you would get these from your PCA results)
-eigenvalues <- c(4.411234, 2.588766)
-prop_var_explained <- c(63.02, 36.98)
-cumulative_var_explained <- c(63.02, 100.00)
-
-# Create the data frame
-results_df <- data.frame(
-  Dimension = c("Dim. 1", "Dim. 2"),  # Only keep the dimensions you want to display
-  Eigenvalue = eigenvalues,
-  `Variance / percent` = prop_var_explained,
-  `Cumulative / variance percent` = cumulative_var_explained
-)
-
-# Generate the table
-kable(results_df,
-      caption = "Table 3. Eigenvalues and percentage of variance for each dimension of PCA",
-      align = 'c',
-      col.names = c("Dimension", "Eigenvalue", "Variance (%)", "Cumulative Variance (%)")) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11)
-
-```
-
-```{r}
-#plotting Dim-1 and Dim-2
-library(FactoMineR)
-library(factoextra)
-
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca_area, axes = 1, choice = "var")
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca_area, axes = 2, choice = "var")
-
-
-```
-
-```{r}
-#|fig-cap: Contribution of variables for each of the tow relevant PCA dimensions
-
-# having Dim1 and Dim2 plots next to each other
-
-library(gridExtra)
-
-# Create the first plot and assign it to p1
-p1 <- fviz_contrib(res_pca_area, axes = 1, choice = "var")
-
-# Create the second plot and assign it to p2
-p2 <- fviz_contrib(res_pca_area, axes = 2, choice = "var")
-
-# Use grid.arrange to place them next to each other
-grid.arrange(p1, p2, ncol = 2)
-
-```
-
-```{r}
-
-loadings <- res_pca_area$var$coord
-
-# 
-eigenvalues <- res_pca_area$eig
-
-#  Dim.1
-contrib_dim1 <- (loadings[,1]^2 / eigenvalues[1, 1]) * 100
-
-#  Dim.2
-contrib_dim2 <- (loadings[,2]^2 / eigenvalues[2, 1]) * 100
-
-
-contrib_df <- data.frame(
-  Variable = rownames(loadings),
-  Contrib_Dim1 = contrib_dim1,
-  Contrib_Dim2 = contrib_dim2
-)
-
-
-print(contrib_df)
-
-```
-
-```{r}
-# screeplot
-
-library(FactoMineR)
-library(factoextra)
-
-
-fviz_eig(res_pca_area)
-
-```
-
-```{r}
-# Correlation plots of variables for each of the tow relevant PCA dimensions
-
-
-fviz_pca_var(res_pca_area, 
-             
-             repel = TRUE) + 
-  theme(text = element_text(size = 10))
-
-
-
-```
-
-```{r}
-# Eigenvalues and percentage of variance
-eig.val <- res_pca_area$eig
-print(eig.val)
-
-# Variable coordinates (correlations with principal components)
-var.coord <- res_pca_area$var$coord
-print(var.coord)
-
-```
-
-```{r}
-#PCA biplot for Dimensions 1 and 2
-
-fviz_pca_biplot(res_pca_area, labelsize = 3, repel = TRUE)
-
-```
-
-```{r}
-# Create the initial biplot without individual labels
-p <- fviz_pca_biplot(res_pca_area, label = "none", 
-                     repel = TRUE, labelsize = 4)
-
-# Add the text labels for the areas using their coordinates from the PCA result
-p + geom_text(aes(x = res_pca_area$ind$coord[, 1], 
-                  y = res_pca_area$ind$coord[, 2], 
-                  label = pca_final_table_area$area), 
-             size = 3, nudge_x = 0.1, nudge_y = 0.1)
-
-
-```
-
-```{r}
-individual_coordinates = res_pca_area$ind$coord
-variable_coordinates = res_pca_area$var$coord
-
-```
-
-```{r}
-# For variables
-fviz_cos2(res_pca_area, choice = "var")
-
-# For individuals
-fviz_cos2(res_pca_area, choice = "ind")
-
-
-```
-
-DONE WITH PCA
-
-```{r}
-
-individual_coordinates <- res_pca_area$ind$coord
-
-
-individual_coordinates_df <- as.data.frame(individual_coordinates)
-individual_coordinates_df$area <- unique(area_data$area)
-
-
-print(individual_coordinates_df)
-
-```
-
-```{r}
-library(kableExtra)
-
-
-# Extract individual coordinates
-individual_coordinates <- res_pca_area$ind$coord
-
-# Convert to a data frame for better visibility and add the 'area' column back for context
-individual_coordinates_df <- as.data.frame(individual_coordinates)
-individual_coordinates_df$Area <- unique(area_data$area)  # Make sure the order matches
-
-# Use kable to create a beautiful table
-kable(individual_coordinates_df, 
-      col.names = c("Area", "Principal Component 1", "Principal Component 2"), 
-      caption = "PCA Coordinates for the Archaeological Areas excavation",
-      align = c('l', 'c', 'c'),
-      digits = 3) %>%
-  kable_styling("striped", full_width = F)
-
-```
-
-```{r}
-# Get the loadings (coefficients) of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-
-
-
-```
-
-```{r}
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-variance_percent <- res_pca$eig[1:2, 2]
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-# Print the table
-print(df)
-
-```
-
-```{r}
-library(gt)
-
-
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
-    decimals = 2
-  )
-
-
-```
-
-```{r}
-
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Print the resulting table
-print(artifact_counts)
-```
-
-```{r}
-
-
-blank_freq <- tl_final_area %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(blank)) %>%
-  group_by(area) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(corefrag)) %>%
-  group_by(area) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final_area %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(tooltypegroup)) %>%
-  group_by(area) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-# Combining all the calculated frequencies into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "area") %>%
-  inner_join(tool_div, by = "area")
-
-# Printing the final table
-print(final_table)
-
-```
-
-```{r}
-# Joining calculated frequencies
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "area") %>%
-  inner_join(tool_div, by = "area") %>%
-  inner_join(retouch_freq, by = "area")
-
-# Converting area to row names
-final_table_rownames <- final_table %>%
-  column_to_rownames(var = "area")
-
-```
-
-```{r}
-
-library(FactoMineR)
-library(factoextra)
-
-# Run PCA
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca, axes = 2, choice = "var")
-
-
-```
-
-```{r}
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca, axes = 1, choice = "var") 
-```
-
-```{r}
-# Visualize eigenvalues and explained variance
-fviz_screeplot(res_pca)
-```
-
-```{r}
-fviz_pca_biplot(res_pca, labelsize = 3, repel = TRUE)
-
-
-```
-
-```{r}
-# Visualize the variables on the principal components
-fviz_pca_var(res_pca)
-```
-
-```{r}
-# Get the loadings (coefficients) of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-# Print the loadings matrix
-print(loadings_matrix)
-
-```
-
-```{r}
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-variance_percent <- res_pca$eig[1:2, 2]
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-# Print the table
-print(df)
-
-```
-
-```{r}
-library(gt)
-
-
-# Create the table 
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
-    decimals = 2
-  )
-
-
-```
-
-```{r}
-# Count the number of artifacts by area
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Print the resulting table
-print(artifact_counts)
-
-```
-
-```{r}
-
-volumes <- data.frame(
-  area = c("ta", "tp1", "d1"),
-  volume = c(52, 5.76, 2.1375)
-)
-
-# Count the number of artifacts by area
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Join artifact_counts with volumes by area
-lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
-
-# Compute lithic density for each area
-lithic_density_df <- lithic_density_df %>%
-  mutate(lithic_density = n / volume)
-
-# Print the resulting table
-print(lithic_density_df[, c("area", "lithic_density")])
-
-```
-
-```{r}
-# Counting the number of cores by area
-core_counts <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1") & !is.na(`core and core fragments`)) %>%
-  group_by(area) %>%
-  tally()
-
-print(core_counts)
-
-```
-
-OK
-
-```{r}
-#| label: fig-1-layer
-#| fig-cap: "Type of Removals"
-#| fig-height: 5
-
-#Type of blank based on Layers
-
-library(ggbeeswarm)
-
-tl4 %>% 
-  filter(!is.na(layer) & Blank2 %in% c('bladelet', 
-                                       'blade', 
-                                       'flake')) %>% 
-
-  # Create bar plot
-  ggplot() +
-  aes(x = layer, 
-      fill = Blank2) +
-  geom_bar(position = "dodge") +
-  labs(x = "Area", 
-       y = "Number", 
-       fill = "Blank Type") +
-  theme_minimal()
-
-```
-
-```{r}
-#Type of core based on Layers
-
-library(ggbeeswarm)
-
-tl4 %>% 
-  filter(!is.na(layer) & 
-           `core-typology` %in% c('bullet','prismatic','pyramid')) %>% 
-
-  # Create bar plot
-  ggplot() +
-  aes(x = layer, 
-      fill = `core-typology`) +
-  geom_bar(position = "dodge") +
-  labs(x = "Area", 
-       y = "Number", 
-       fill = "Blank Type") +
-  theme_minimal()
 ```
 
 consistency in dimention:
@@ -3808,6 +2356,10 @@ tl3 %>%
 
 ```
 
+1.  (formal + informal) to debitages
+2.  formal vs. informal
+3.  shine/ sickle as a used for processing plants
+
 ```{r}
 #|label: NA 
 #|fig-cap: "tool typology"
@@ -3961,3 +2513,1575 @@ plot_combined <- plot_shine + plot_retouch + plot_utilization
 plot_combined
 
 ```
+
+WABI_AL Ta-e → 13 m3 Ta-d → 45 m3 D1-c → 0.675 m3 Tp-c → 1.44 m3 D1-a → 1.575 m3
+
+```{r}
+# Create a tibble with example data
+summary_table2_area <- tibble(
+  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
+  lithic_volumetric_density = c(51.2, 110.9, 45.1, 100.2, 88.3),
+  percent_retouch = c(4.9, 9.3, 15.3, 18.0, 9.8)
+)
+
+```
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(ggpmisc)
+
+# Create the data frame
+summary_table2_area <- tibble(
+  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
+  lithic_volumetric_density = c(51.43, 111.11, 45.13, 100.08, 212.50),
+  retouch_frequency = c(0.05, 0.09, 0.07, 0.07, 0.10)
+)
+
+# Create the ggplot
+p <- ggplot(summary_table2_area, 
+            aes(x = lithic_volumetric_density,
+                                     y = retouch_frequency)) +
+  
+  # Add points
+  geom_point(color = 
+               "black", 
+             size = 2) +
+  
+  # line with log scale
+  stat_smooth(method = "lm", 
+              formula = y ~ log(x), 
+              se = TRUE, aes(group = 1), 
+              color = "blue", 
+              size = 0.5) +
+
+  # Add text labels for each point
+  geom_text(aes(label = area), 
+            vjust = -1, 
+            hjust = -0.5, 
+            size = 2.5) +
+  
+  # Add regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
+               formula = y ~ log(x), 
+               parse = TRUE, 
+               size = 2) +
+  
+  # Add titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+  
+  scale_x_log10() +
+  
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+print(p)
+
+```
+
+```{r}
+
+library(googlesheets4)
+
+data_sheet <- "https://docs.google.com/spreadsheets/d/16yLb-RyIQ7x2jFEH_Q7OZYTwlEAXJgFu/edit#gid=2014421097" 
+
+
+sum_depth_sheet <- read_sheet(data_sheet, sheet = "sum_depth")
+
+
+```
+
+WABI_AREA
+
+```{r}
+# regression plot-area
+library(ggplot2)
+library(ggpmisc)
+
+# Plotting
+p <- ggplot(summary_table2_area, aes(x = lithic_volumetric_density, y = percent_retouch)) +
+  
+  # Blue regression line with shaded area
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              aes(group = 1), 
+              color = "blue") +
+  
+  # Points colored by area
+  geom_point(color = "black") + 
+
+  # Labels points with area names
+  geom_text(aes(label = area),
+            vjust = -1, 
+            hjust = -0.5) +  
+  
+  # Regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
+               formula = y ~ x,
+               parse = TRUE,
+               size = 3) +
+  
+  # Titles and labels
+  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+       x = "Lithic Volumetric Density",
+       y = "Retouch Frequency (%)")
+
+print(p)
+
+
+```
+
+```{r}
+# Fit the linear model
+linear_model <- lm(percent_retouch ~ lithic_volumetric_density, data = summary_table2_area)
+
+# Display the summary of the model to get coefficients, R-squared, and p-value
+summary_linear_model <- summary(linear_model)
+
+# Extract the coefficients (intercept and slope)
+coefficients <- summary_linear_model$coefficients
+
+# Extract the R-squared value
+r_squared <- summary_linear_model$r.squared
+
+# Extract the p-value for the slope (lithic_volumetric_density)
+p_value_slope <- coefficients["lithic_volumetric_density", "Pr(>|t|)"]
+
+cat("Coefficients:\n")
+print(coefficients)
+
+cat("\nR-squared value:", r_squared)
+
+cat("\nP-value for slope:", p_value_slope)
+
+```
+
+```{r}
+#whole assemblage
+ 
+  # Summarize data by Area
+summary_table_tech <- tl_final_area %>%
+  group_by(area) %>% 
+ 
+  summarise(
+   blade_count = sum(blank == "blade", na.rm = TRUE),
+    flake_count = sum(blank == "flake", na.rm = TRUE),
+    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
+
+    
+    bullet_core_count = sum(`core-typology` == "bullet", na.rm = TRUE),
+    flat_core_count = sum(`core-typology` == "flat", na.rm = TRUE),
+    pyramid_core_count = sum(`core-typology` == "pyramid", na.rm = TRUE),
+    cylinder_core_count = sum(`core-typology` %in% c("prismatic", "cylinder"), na.rm = TRUE),
+    shapeless_core_count = sum(`core-typology` == "shapeless", na.rm = TRUE),
+    
+    core_fragment_count = sum(`corefrag` == "core fragment", na.rm = TRUE),
+    core_rejuvention_count = sum(`corefrag` == "rejuvenation piece", na.rm = TRUE),
+    core_tablet_count = sum(`corefrag` == "core tablet", na.rm = TRUE),
+    core_crested_count = sum(`corefrag` == "crested bladelet", na.rm = TRUE),
+    core_primarypiece_count = sum(`corefrag`  %in% c("primary flake", "primary blade"), na.rm = TRUE),
+  
+   total = n()
+  )
+```
+
+```{r}
+#plot_blank_type
+# Libraries
+library(dplyr)
+library(ggplot2)
+library(ggbeeswarm)
+
+# Data filtering and plotting
+tl_final_area %>% 
+  filter(blank %in% c('bladelet', 'blade', 'flake')) %>%
+  ggplot(aes(x = area, fill = blank)) +
+  geom_bar(position = "dodge") +
+  labs(
+    x = "Area",
+    y = "Number",
+    fill = "Blank Type"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+
+# Filter the data for the relevant categories
+tl4_filtered <- tl4_tool_Blank %>%
+  filter(Blank2 %in% 
+           c("bladelet", 
+             "blade", 
+             "flake"))
+
+# Create separate bar plots for shine, Retouch, and Utilization
+plot_shine2 <- ggplot(tl4_filtered, aes(x = Blank2, fill = shine2)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Shine2 by Blank2",
+       x = "Blank2",
+       y = "Frequency",
+       fill = "Shine2") +
+  theme_minimal()
+
+plot_retouch <- ggplot(tl4_filtered, aes(x = Blank2, fill = Retouch)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Retouch by Blank2",
+       x = "Blank2",
+       y = "Frequency",
+       fill = "Retouch") +
+  theme_minimal()
+
+plot_utilization <- ggplot(tl4_filtered, aes(x = Blank2, fill = Utilization)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Utilization by Blank2",
+       x = "Blank2",
+       y = "Frequency",
+       fill = "Utilization") +
+  theme_minimal()
+
+# Combine the three plots side by side
+library(patchwork)
+combined_plots <- plot_shine2 + plot_retouch + plot_utilization
+combined_plots
+
+
+
+```
+
+```{r}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Assuming your data is stored in the variable tl4_tool_Blank
+# Filter the data to keep only bladelet, blade, and flake in the Blank column
+tl_final_aread <- tl_final_area %>%
+  filter(blank %in% c("bladelet", "blade", "flake"))  %>%
+
+# Group the data by Blank2 and calculate the counts for each combination of Utilization, shine2, and Retouch
+
+  group_by(blank, utilization, `sickle shine`, retouch) %>%
+  summarise(count = n())
+
+# Print the table using kable() and kableExtra for formatting
+table_kable <- kable(table_summary, format = "html", caption = "Summary Table", 
+                     col.names = c("Blank2", "Utilization", "shine2", "Retouch", "Count")) %>%
+  kable_styling(bootstrap_options = "striped")
+
+# Print the table
+print(table_kable)
+
+```
+
+```{r}
+#|label: fig_
+#|fig-cap: "Boxplot for each Dimention"
+#|fig-height: 5
+
+library(dplyr)
+library(ggplot2)
+
+# Filter the data to keep only bladelet, blade, and flake in the Blank column
+tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
+  filter(Blank2 %in% c("bladelet", "blade", "flake"))
+
+tl4_tool_Blank_tally <- 
+  tl4_tool_Blank_filtered %>%
+  group_by(Blank2) %>%
+  tally()
+
+# Select dimensions and convert Thickness (mm) to numeric
+tl4_tool_Blank_selected <- 
+  tl4_tool_Blank_filtered %>% 
+  select(Blank2, 
+         Utilization, 
+         Retouch, 
+         shine2) 
+
+# Plot
+# Pivot data to longer format
+tl4_tool_Blank_long <- 
+  tl4_tool_Blank_selected %>% 
+  pivot_longer(cols = c(Utilization, Retouch, shine2), 
+               names_to = "Blank2", 
+               values_to = "Value")
+
+# Create boxplot
+ggplot(tl4_tool_Blank_long, aes(x = Blank2, y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~Blank2, scales = "free") +
+  labs(x = "Blank", 
+       y = "Frequency") +
+  theme_minimal()
+
+
+
+
+
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Filter the data to keep only bladelet, blade, and flake in the Blank2 column
+tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
+  filter(Blank2 %in% c("bladelet", "blade", "flake"))
+
+tl4_tool_Blank_tally <- 
+  tl4_tool_Blank_filtered %>%
+  group_by(Blank2) %>%
+  tally()
+
+# Select dimensions and convert Thickness (mm) to numeric
+tl4_tool_Blank_selected <- 
+  tl4_tool_Blank_filtered %>% 
+  select(Blank2, 
+         Utilization, 
+         Retouch, 
+         shine2) 
+
+# Manually rename the duplicate columns
+names(tl4_tool_Blank_selected)[names(tl4_tool_Blank_selected) == "Blank2"] <- "Dimension"
+
+# Pivot data to longer format
+tl4_tool_Blank_long <- 
+  tl4_tool_Blank_selected %>% 
+  pivot_longer(cols = c(Utilization, Retouch, shine2), 
+               names_to = "", 
+               values_to = "Value")
+
+# Create boxplot
+ggplot(tl4_tool_Blank_long, aes(x = Dimension, y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~, scales = "free") +
+  labs(x = "Blank", 
+       y = "Frequency") +
+  theme_minimal()
+
+```
+
+```{r}
+
+# Load required packages
+library(ggplot2)
+
+# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
+tl4_filtered <- tl4_tool_Blank %>%
+  filter(Blank2 %in% c("blade", "bladelet", "flake"))
+
+# Create the plot with facetting
+tl4_plots <- ggplot(tl4_filtered, aes(x = Blank2, fill = Blank2)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Utilization, Retouch, and shine2 by Blank",
+       x = "Blank2",
+       y = "Count") +
+  facet_grid(. ~ Blank2, scales = "free") +
+  theme_minimal()
+
+# Print the plot
+print(tl4_plots)
+
+```
+
+```{r}
+# Load required packages
+library(ggplot2)
+library(cowplot)
+
+# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
+tl4_filtered <- tl4_tool_Blank %>%
+  filter(Blank2 %in% c("blade", "bladelet", "flake"))
+
+# Plot Utilization by Blank2
+plot_utilization <- ggplot(tl4_filtered, aes(Blank2, Utilization)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Utilization by Blank",
+       x = "Blank2",
+       y = "Utilization") +
+  theme_minimal()
+
+# Plot Retouch by Blank
+plot_retouch <- ggplot(tl4_filtered, aes(Blank2, Retouch)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Retouch by Blank",
+       x = "Blank2",
+       y = "Retouch") +
+  theme_minimal()
+
+# Plot shine by Blank
+plot_shine <- ggplot(tl4_filtered, aes(x = Blank2, y = shine2)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "shine by Blank",
+       x = "Blank2",
+       y = "shine2") +
+  theme_minimal()
+
+# Combine the plots using cowplot or patchwork
+plot_combined <- cowplot::plot_grid(plot_utilization, plot_retouch, plot_shine, ncol = 3)
+
+# Print the combined plot
+print(plot_combined)
+
+```
+
+```{r}
+
+#|label: fig_
+#|fig-cap:  vs Debitage
+#|fig-height: 5
+
+# Filter data
+tl4__blank %>% 
+  filter(Blank2 %in% c('tp1', 'ta', 'd1')) %>% 
+  select(Blank2, 
+         `Width (mm)`, 
+         `Thickness (mm)`, 
+         `Length (mm)`) %>%
+mutate(`Thickness (mm)` = as.numeric(`Thickness (mm)`))
+
+# Pivot data to longer format
+long_data <- tl3_dimention_blank %>% 
+  pivot_longer(cols = c(`Width (mm)`, `Thickness (mm)`, `Length (mm)`), 
+               names_to = "Dimension", 
+               values_to = "Value")
+
+# Create boxplot
+ggplot(long_data, aes(x = area, y = Value)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 0.01) +
+  facet_wrap(~Dimension, scales = "free_y") +
+  scale_y_log10() +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+library(ggbeeswarm)
+tl3_dimention_blank <- tl3 %>% 
+  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
+  pivot_longer(-area) %>% 
+  ggplot() +
+  aes(area,
+      value) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 0.01) +
+  facet_wrap( ~ name,
+              scales = "free_y") +
+  scale_y_log10() +
+  theme_minimal()
+  
+```
+
+```{r}
+library(ggbeeswarm)
+tl3 %>% 
+  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
+  pivot_longer(-area) %>% 
+  ggplot() +
+  aes(area,
+      value) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 0.01) +
+  facet_wrap( ~ name,
+              scales = "free_y") +
+  scale_y_log10() +
+  theme_minimal()
+
+```
+
+```{r}
+#| label: fig-Width-of-Artifacts-Area-A-by-depth
+#| fig-cap: "Width of Artifacts by depth (Area A)"
+#| fig-height: 5
+tl %>%
+  filter(AREA == "A") %>%
+  select(
+         `Width (mm)`,
+         `DEPTH (cm)`) %>%
+  ggplot() +
+  aes(x = `DEPTH (cm)`,
+      y = `Width (mm)`) +
+  geom_boxplot() +
+  theme_minimal()
+```
+
+```{r}
+#| label: Width of Artifacts (Area A)
+#| fig-cap: "Width of Artifacts (Area A)"
+#| fig-height: 5
+
+tl1 %>%
+  filter(AREA == "TP1") %>%
+  select(AREA, `Width (mm)`) %>%
+  ggplot() +
+  aes(x = `Width (mm)`) +
+  geom_histogram(binwidth = 2) +
+  labs(x = "Width of Debitage (mm)", 
+       y = "Frequency", 
+       title = "Histogram of Width for Area TP1" )+
+  theme_minimal()
+```
+
+WABI:
+
+```{r}
+# regression plot-layer
+library(ggplot2)
+library(ggpmisc)
+
+# Plotting
+p <- ggplot(summary_table2_layer, 
+            aes(lithic_volumetric_density, 
+                percent_retouch)) +
+  
+ 
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              aes(group = 1), 
+              color = "blue") +
+  
+  # Points colored by layer
+  geom_point(color = "black") + 
+
+  # Labels points with layer names
+  geom_text(aes(label = layer),
+            vjust = -1, 
+            hjust = -0.5) +  
+  
+  # Regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
+               formula = y ~ x,
+               parse = TRUE,
+               size = 3) +
+  
+  # Titles and labels
+  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+       x = "Lithic Volumetric Density",
+       y = "Retouch Frequency (%)")
+
+print(p)
+```
+
+```{r}
+#barplot_layer
+
+tl_final_area %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
+  filter(!is.na(corefrag)) %>% 
+  select(layer, corefrag) %>%
+  ggplot() +
+  aes(x = corefrag) +
+  geom_bar() +  # Use geom_bar for categorical data
+  labs(x = "Core and Core fragments", y = "Frequency") +
+  facet_wrap(~layer, ncol = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+```
+
+```{r}
+#Core-barplot_area
+
+tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(!is.na(corefrag)) %>% # Exclude rows where corefrag is NA
+  select(area, corefrag) %>%
+  ggplot() +
+  aes(x = corefrag) +
+  geom_bar() +
+  labs(x = "Core and Core fragments",
+       y = "Frequency") +
+  facet_wrap(~area, ncol = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+filtered_data <- tl_final %>%
+  filter(!is.na(`tool-typology`) & `tool-typology` != "" & `tool-typology` != "NA")
+ggplot(data = filtered_data) + 
+  aes(y = `tool-typology`) + 
+  geom_bar() +
+  labs(x = "Frequency",
+       y = "Tool Type") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 20, hjust = 1, vjust = 0.5))
+        
+
+
+
+```
+
+```{r}
+
+filtered_data <- tl_final %>%
+  filter(!is.na(``) & `` != "")
+
+# Create the plot using the filtered data
+ggplot(data = filtered_data) + 
+  aes(y = ``) + 
+  geom_bar() +
+  labs(y = "Tool Type",
+       x = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+
+```
+
+PCA-LAYER
+
+```{r}
+#prepare the data for PCA-layer
+
+# Calculating Blank Frequency
+blank_freq <- tl_final_area %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
+  group_by(layer) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final_area %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(corefrag)) %>%
+  group_by(layer) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(tooltypegroup)) %>%
+  group_by(layer) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+# Combining all the calculated frequencies into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer")
+
+# Printing the final table
+print(final_table)
+
+```
+
+```{r}
+# Calculating Blank Frequency
+blank_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
+  group_by(layer) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "e or d")) %>%
+  group_by(layer) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / n(), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "e or d"), !is.na(tooltypegroup)) %>%
+  group_by(layer) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+# Calculating Retouch Frequency
+retouch_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
+  group_by(layer) %>%
+  summarise(retFreq = sum( == "retouched piece", na.rm = TRUE) / n(), .groups = 'drop')
+
+
+
+# Combining all the calculated frequencies, including retouch frequency, into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer") %>%
+  inner_join(retouch_freq, by = "layer") 
+
+
+# Printing the final table
+print(final_table)
+
+```
+
+```{r}
+# Joining calculated frequencies
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer") %>%
+  inner_join(retouch_freq, by = "layer")
+
+# Converting layer to row names
+final_table_rownames <- final_table %>%
+  column_to_rownames(var = "layer")
+
+```
+
+```{r}
+# Compute the PCA
+library(FactoMineR)
+
+res_pca <-
+  PCA(final_table_rownames,
+      graph = FALSE)
+
+```
+
+```{r}
+library(factoextra)
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca,
+             axes = 1,   
+             choice = "var") 
+
+```
+
+```{r}
+library(factoextra)
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca,
+             axes = 2,   # Selecting the second axis
+             choice = "var") # Choosing to show contributions of variables
+
+```
+
+```{r}
+library(factoextra)
+
+# Creating a biplot
+fviz_pca_biplot(res_pca)
+```
+
+```{r}
+library(factoextra)
+fviz_screeplot(res_pca)
+```
+
+```{r}
+fviz_pca_var(res_pca)
+```
+
+```{r}
+
+library(FactoMineR)
+library(factoextra)
+
+# Run PCA
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca, axes = 1, choice = "var") 
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca, axes = 2, choice = "var")
+
+# Visualize eigenvalues and explained variance
+fviz_screeplot(res_pca)
+
+# Create a biplot of the PCA
+fviz_pca_biplot(res_pca)
+
+# Visualize the variables on the principal components
+fviz_pca_var(res_pca)
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(FactoMineR)
+library(factoextra)
+
+# Run PCA
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+# Get the loadings (coefficients) of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+# Print the loadings matrix
+print(loadings_matrix)
+
+```
+
+```{r}
+#Table
+
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+
+# Variance percent
+variance_percent <- res_pca$eig[1:2, 2]
+
+# Cumulative variance percent
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+# Print the table
+print(df)
+
+```
+
+```{r}
+#Table 
+
+library(gt)
+
+# Create data frame
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+rownames(df) <- c("Dim1", "Dim2")
+
+# Create the table using gt
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = vars(Eigenvalue, Variance_Percent, Cumulative_Variance_Percent),
+    decimals = 2
+  )
+
+
+```
+
+calculating PCA based on AREA: TA/ TP1/ D1:
+
+```{r}
+#4lithic density
+
+
+# A→ V=4×5×2.6 = 52 m3
+# TP → V=2×1.8×1.6 = 5.76 m 3
+# D1 → 1.5×1.5×0.95 = 2.1375 m3
+
+library(dplyr)
+
+# Define the volumes for each area based on the given information
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375) # in m^3
+)
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final_area %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Join artifact_counts with volumes by area
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
+
+# Compute lithic density for each area
+lithic_density_df <- lithic_density_df %>%
+  mutate(lithic_density = n / volume) # number of artifacts / volume
+
+# Print the resulting table
+print(lithic_density_df[, c("area", "lithic_density")])
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+#2 Calculate the frequency of cores and core fragments by area
+
+library(dplyr)
+# Calculate the core frequency
+core_frequency_by_area <- left_join(number_of_cores_by_area, 
+                                    total_lithics_by_area, 
+                                    by = "area") %>%
+  mutate(core_frequency = (number_of_cores / total_lithics) * 100)
+
+# Display the result
+print(core_frequency_by_area)
+
+```
+
+```{r}
+# 1number of Blank
+
+# Calculate the total number of lithic artifacts
+total_lithics <- tl_final_area %>%
+  summarise(total_lithics = n()) %>%
+  pull(total_lithics)
+
+# Display the total number of lithic artifacts
+print(paste("The total number of lithic artifacts is:", total_lithics))
+
+
+```
+
+```{r}
+# 5Calculate the retouched frequency for each area
+library(dplyr)
+
+
+total_lithics_by_area <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(total_lithics = n())
+
+number_of_retouched_by_area <- tl_final_area %>%
+  mutate(retouch = as.numeric(`retouch`)) %>% 
+  filter(!is.na(retouch), retouch == 1) %>%  
+  group_by(area) %>%  
+  summarise(number_of_retouched = sum(retouch))
+
+retouched_frequency_by_area <- left_join(number_of_retouched_by_area, total_lithics_by_area, by = "area") %>%
+  mutate(retouched_frequency = (number_of_retouched / total_lithics) * 100)
+
+# Display the retouched frequency by area
+print(retouched_frequency_by_area)
+
+
+
+
+print(number_of_retouched_by_area)
+
+```
+
+```{r}
+# 3Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(tooltypegroup)) %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+```
+
+```{r}
+#feature frequency: 
+d1     1 
+ta    1
+tp1 	0)
+
+
+```
+
+```{r}
+#estimated area
+A→  52 m3
+TP → 5.76 m 3
+D1 → 2.1375 m3
+```
+
+```{r}
+library(dplyr)
+library(FactoMineR)
+library(tibble)
+
+# Define estimated area and feature frequency data
+area_data <- tibble(
+  area = c("d1", "ta", "tp1"),
+  estimated_area = c(2.1375, 52, 5.76),
+  feature_freq = c(1, 1, 0)
+)
+
+
+
+# Step 1: Number of artifacts by area
+artifact_counts <- tl_final_area %>%
+  group_by(area) %>%
+  tally()
+
+# Step 2: Calculate each variable
+
+# Retouch Frequency 
+retouch_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(retouchFreq = mean(!is.na(retouch)), .groups = 'drop')
+
+# Blank Frequency
+blank_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(blankFreq = mean(!is.na(blank)), .groups = 'drop')
+
+# Core Frequency
+core_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(coreFreq = mean(!is.na(`core-typology`)),.groups = 'drop')
+
+# Lithic density (Artifact counts / estimated area)
+lithic_density <- artifact_counts %>%
+  left_join(area_data, by = "area") %>%
+  mutate(lithic_density = n / estimated_area)
+
+# Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(n()), .groups = 'drop')
+
+# Step 3: Combining all variables 
+
+pca_final_table_area <- left_join(area_data, retouch_freq, by = "area") %>%
+  left_join(blank_freq, by = "area") %>%
+  left_join(core_freq, by = "area") %>%
+  left_join(lithic_density, by = "area") %>%
+  left_join(tool_div, by = "area") %>%
+  select(area, estimated_area, feature_freq, retouchFreq, blankFreq, coreFreq, lithic_density, toolDiv) 
+
+
+
+
+
+```
+
+```{r}
+pca_final_table_area <- pca_final_table_area %>%
+    select(
+        area, 
+        estimated_area = estimated_area.x, 
+        feature_freq = feature_freq.x, 
+        retouchFreq, 
+        blankFreq, 
+        coreFreq, 
+        n, 
+        lithic_density, 
+        toolDiv
+    )
+
+```
+
+```{r}
+# Step 4: Perform PCA
+res_pca_area <- PCA(pca_final_table_area %>% select(-area, -n), graph = FALSE)
+
+
+# Show the summary of PCA
+print(res_pca_area)
+
+
+print(res_pca_area$eig)
+print(res_pca_area$var$coord)
+```
+
+```{r}
+# TABLE: Eigenvalues and percentage of variance for each dimension of PCA 
+library(kableExtra)
+
+# Define the values manually (you would get these from your PCA results)
+eigenvalues <- c(4.411234, 2.588766)
+prop_var_explained <- c(63.02, 36.98)
+cumulative_var_explained <- c(63.02, 100.00)
+
+# Create the data frame
+results_df <- data.frame(
+  Dimension = c("Dim. 1", "Dim. 2"),  # Only keep the dimensions you want to display
+  Eigenvalue = eigenvalues,
+  `Variance / percent` = prop_var_explained,
+  `Cumulative / variance percent` = cumulative_var_explained
+)
+
+# Generate the table
+kable(results_df,
+      caption = "Table 3. Eigenvalues and percentage of variance for each dimension of PCA",
+      align = 'c',
+      col.names = c("Dimension", "Eigenvalue", "Variance (%)", "Cumulative Variance (%)")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11)
+
+```
+
+```{r}
+#plotting Dim-1 and Dim-2
+library(FactoMineR)
+library(factoextra)
+
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca_area, axes = 1, choice = "var")
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca_area, axes = 2, choice = "var")
+
+
+```
+
+```{r}
+#|fig-cap: Contribution of variables for each of the tow relevant PCA dimensions
+
+
+
+# having Dim1 and Dim2 plots next to each other
+
+library(gridExtra)
+
+# Create the first plot and assign it to p1
+p1 <- fviz_contrib(res_pca_area, axes = 1, choice = "var")
+
+# Create the second plot and assign it to p2
+p2 <- fviz_contrib(res_pca_area, axes = 2, choice = "var")
+
+# Use grid.arrange to place them next to each other
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+```{r}
+# Extract the loadings (coordinates of variables)
+loadings <- res_pca_area$var$coord
+
+# Extract the eigenvalues
+eigenvalues <- res_pca_area$eig
+
+# Calculate the contribution for Dim.1
+contrib_dim1 <- (loadings[,1]^2 / eigenvalues[1, 1]) * 100
+
+# Calculate the contribution for Dim.2
+contrib_dim2 <- (loadings[,2]^2 / eigenvalues[2, 1]) * 100
+
+# Create a data frame to hold the contributions
+contrib_df <- data.frame(
+  Variable = rownames(loadings),
+  Contrib_Dim1 = contrib_dim1,
+  Contrib_Dim2 = contrib_dim2
+)
+
+# Show the contributions
+print(contrib_df)
+
+```
+
+```{r}
+# screeplot
+
+library(FactoMineR)
+library(factoextra)
+
+# Generate the scree plot
+fviz_eig(res_pca_area)
+
+```
+
+```{r}
+# Correlation plots of variables for each of the tow relevant PCA dimensions
+
+
+fviz_pca_var(res_pca_area, 
+             
+             repel = TRUE) + 
+  theme(text = element_text(size = 10))
+
+
+
+```
+
+```{r}
+# Eigenvalues and percentage of variance
+eig.val <- res_pca_area$eig
+print(eig.val)
+
+# Variable coordinates (correlations with principal components)
+var.coord <- res_pca_area$var$coord
+print(var.coord)
+
+```
+
+```{r}
+#PCA biplot for Dimensions 1 and 2
+
+fviz_pca_biplot(res_pca_area, labelsize = 3, repel = TRUE)
+
+```
+
+```{r}
+# Create the initial biplot without individual labels
+p <- fviz_pca_biplot(res_pca_area, label = "none", 
+                     repel = TRUE, labelsize = 4)
+
+# Add the text labels for the areas using their coordinates from the PCA result
+p + geom_text(aes(x = res_pca_area$ind$coord[, 1], 
+                  y = res_pca_area$ind$coord[, 2], 
+                  label = pca_final_table_area$area), 
+             size = 3, nudge_x = 0.1, nudge_y = 0.1)
+
+
+```
+
+```{r}
+individual_coordinates = res_pca_area$ind$coord
+variable_coordinates = res_pca_area$var$coord
+
+```
+
+```{r}
+# For variables
+fviz_cos2(res_pca_area, choice = "var")
+
+# For individuals
+fviz_cos2(res_pca_area, choice = "ind")
+
+
+```
+
+DONE WITH PCA
+
+```{r}
+# Extract individual coordinates
+individual_coordinates <- res_pca_area$ind$coord
+
+# Convert to a data frame for better visibility and add the 'area' column back for context
+individual_coordinates_df <- as.data.frame(individual_coordinates)
+individual_coordinates_df$area <- unique(area_data$area)
+
+# Show the data frame
+print(individual_coordinates_df)
+
+```
+
+```{r}
+library(kableExtra)
+
+
+# Extract individual coordinates
+individual_coordinates <- res_pca_area$ind$coord
+
+# Convert to a data frame for better visibility and add the 'area' column back for context
+individual_coordinates_df <- as.data.frame(individual_coordinates)
+individual_coordinates_df$Area <- unique(area_data$area)  # Make sure the order matches
+
+# Use kable to create a beautiful table
+kable(individual_coordinates_df, 
+      col.names = c("Area", "Principal Component 1", "Principal Component 2"), 
+      caption = "PCA Coordinates for the Archaeological Areas excavation",
+      align = c('l', 'c', 'c'),
+      digits = 3) %>%
+  kable_styling("striped", full_width = F)
+
+```
+
+```{r}
+# Get the loadings (coefficients) of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+# Print the loadings matrix
+print(loadings_matrix)
+
+```
+
+```{r}
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+variance_percent <- res_pca$eig[1:2, 2]
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+# Print the table
+print(df)
+
+```
+
+```{r}
+library(gt)
+
+
+# Create the table using gt
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
+    decimals = 2
+  )
+
+
+```
+
+```{r}
+# Count the number of artifacts by area and store it in a new data frame
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Print the resulting table
+print(artifact_counts)
+```
+
+```{r}
+
+# Calculating retouch Frequency
+
+
+# Calculating Blank Frequency
+blank_freq <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(blank)) %>%
+  group_by(area) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(corefrag)) %>%
+  group_by(area) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(tooltypegroup)) %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+# Combining all the calculated frequencies into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "area") %>%
+  inner_join(tool_div, by = "area")
+
+# Printing the final table
+print(final_table)
+
+```
+
+```{r}
+# Joining calculated frequencies
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "area") %>%
+  inner_join(tool_div, by = "area") %>%
+  inner_join(retouch_freq, by = "area")
+
+# Converting area to row names
+final_table_rownames <- final_table %>%
+  column_to_rownames(var = "area")
+
+```
+
+```{r}
+# Load necessary libraries
+library(FactoMineR)
+library(factoextra)
+
+# Run PCA
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca, axes = 2, choice = "var")
+
+
+```
+
+```{r}
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca, axes = 1, choice = "var") 
+```
+
+```{r}
+# Visualize eigenvalues and explained variance
+fviz_screeplot(res_pca)
+```
+
+```{r}
+fviz_pca_biplot(res_pca, labelsize = 3, repel = TRUE)
+
+
+```
+
+```{r}
+# Visualize the variables on the principal components
+fviz_pca_var(res_pca)
+```
+
+```{r}
+# Get the loadings (coefficients) of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+# Print the loadings matrix
+print(loadings_matrix)
+
+```
+
+```{r}
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+variance_percent <- res_pca$eig[1:2, 2]
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+# Print the table
+print(df)
+
+```
+
+```{r}
+library(gt)
+
+
+# Create the table using gt
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
+    decimals = 2
+  )
+
+
+```
+
+```{r}
+# Count the number of artifacts by area and store it in a new data frame
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Print the resulting table
+print(artifact_counts)
+
+```
+
+```{r}
+# Define the volumes for each area based on the given information
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375)
+)
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Join artifact_counts with volumes by area
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
+
+# Compute lithic density for each area
+lithic_density_df <- lithic_density_df %>%
+  mutate(lithic_density = n / volume)
+
+# Print the resulting table
+print(lithic_density_df[, c("area", "lithic_density")])
+
+```
+
+```{r}
+# Counting the number of cores by area
+core_counts <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1") & !is.na(`core and core fragments`)) %>%
+  group_by(area) %>%
+  tally()
+
+print(core_counts)
+
+```
+
+OK
+
+```{r}
+
+
+```
+
+```{r}
+#| label: fig-1-layer
+#| fig-cap: "Type of Removals"
+#| fig-height: 5
+
+#Type of blank based on Layers
+
+library(ggbeeswarm)
+
+tl4 %>% 
+  filter(!is.na(layer) & Blank2 %in% c('bladelet', 
+                                       'blade', 
+                                       'flake')) %>% 
+
+  # Create bar plot
+  ggplot() +
+  aes(x = layer, 
+      fill = Blank2) +
+  geom_bar(position = "dodge") +
+  labs(x = "Area", 
+       y = "Number", 
+       fill = "Blank Type") +
+  theme_minimal()
+
+```
+
+```{r}
+#Type of core based on Layers
+
+library(ggbeeswarm)
+
+tl4 %>% 
+  filter(!is.na(layer) & 
+           `core-typology` %in% c('bullet','prismatic','pyramid')) %>% 
+
+  # Create bar plot
+  ggplot() +
+  aes(x = layer, 
+      fill = `core-typology`) +
+  geom_bar(position = "dodge") +
+  labs(x = "Area", 
+       y = "Number", 
+       fill = "Blank Type") +
+  theme_minimal()
+```
+
+OK
