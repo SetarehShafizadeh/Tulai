@@ -11,12 +11,7 @@ execute:
 title-block-published: "last updated"
 editor: visual
 ---
-```{r}
-library(usethis)
-3
-usethis::use_git()
 
-```
 
 
 
