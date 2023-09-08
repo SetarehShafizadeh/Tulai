@@ -1,5 +1,5 @@
 ---
-title: "Tulai"
+title: ""
 author: ""
 date: now
 format: 
@@ -2082,8 +2082,6 @@ write_sheet(sum_depth_sheet, ss = google_sheet_url)
 
 ```
 
-
-
 ```{r}
 # WABI_LEVEL
 filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
@@ -2133,7 +2131,6 @@ WABI_Level <- ggplot(filtered_data,
 print(WABI_Level)
 
 ```
-
 
 ```{r}
 #  WABI-level-log scale
@@ -3284,5 +3281,3 @@ core_counts <- tl_final %>%
 print(core_counts)
 
 ```
-
-
