@@ -174,6 +174,8 @@ tl1 <- tl1 %>%
      
       TRUE ~ NA_character_
   ))
+
+
 # Remove specific columns
 tl1 %>% 
   select(-c("AREA", 
@@ -2057,32 +2059,36 @@ print(WABI_AL)
 
 ```{r}
 
+
 library(googlesheets4)
 
-sum_depth_sheet <- "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0" 
 
-sum_depth_sheet <- read_sheet(sum_depth_sheet)
+google_sheet_url <- "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
+
+
+sum_depth_sheet <- read_sheet(google_sheet_url)
+
 
 sum_depth_sheet <- sum_depth_sheet %>%
   mutate(area_layer_level = paste0(toupper(area), "_", layer, "_", level)) %>%
-  relocate(area_layer_level, .after = level) 
-
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(retouch_freq = round(retouch_tool / total_lithics, 2),
-         lithic_dens = round(total_lithics / volume, 2)
+  relocate(area_layer_level, .after = last_col()) %>%
+  mutate(
+    retouch_freq = round(retouch_tool / total_lithics, 2),
+    lithic_dens = round(total_lithics / volume, 2)
   )
 
 
-
-write_sheet(sum_depth_sheet, ss = sheet_url)
-
-
+write_sheet(sum_depth_sheet, ss = google_sheet_url)
 
 ```
 
+
+
 ```{r}
-# Create the ggplot
-WABI_Level <- ggplot(sum_depth_sheet, 
+# WABI_LEVEL
+filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
+
+WABI_Level <- ggplot(filtered_data, 
             aes(x = lithic_dens,
                 y = retouch_freq)) +
   
@@ -2128,95 +2134,50 @@ print(WABI_Level)
 
 ```
 
+
 ```{r}
-# Create the ggplot with y-axis on a log scale
-WABI_Level <- ggplot(sum_depth_sheet, 
+#  WABI-level-log scale
+
+filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
+
+WABI_Level <- ggplot(filtered_data,  
             aes(x = lithic_dens,
                 y = retouch_freq)) +
   
-  # Add points with different shapes based on area
-  geom_point(aes(shape = area), size = 2) +
+
+  geom_point(color = "black", size = 1.5) +
+
   
-  # Add smoothing line
   geom_smooth(method = "lm", 
               se = TRUE, 
               color = "blue", 
               size = 0.5) +
-  
-  # Add regression equation, R-squared, and p-value
-  stat_poly_eq(aes(label = paste(stat(eq.label), 
-                                 stat(rr.label), 
-                                 stat(p.value.label), 
-                                 sep = "~~~")),
-               formula = y ~ x, 
-               parse = TRUE, 
-               size = 2) +
-  
-  # Add titles and labels
-  labs(
-    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-    x = "Lithic Volumetric Density",
-    y = "Retouch Frequency"
-  ) +
-  
-  # Apply log scale to y-axis
-  scale_y_log10() +
-  
-  # Add shape legend
-  scale_shape_manual(values = c(16, 17, 25)) +
-  
-  # Customize theme
-  theme(
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 12)
-  )
 
-# Print the plot
-print(WABI_Level)
-
-```
-
-```{r}
-# log-scale
-
-WABI_Level <- ggplot(sum_depth_sheet, 
-            aes(x = lithic_dens,
-                y = retouch_freq)) +
-  
-  # Add points
-  geom_point(color = "black", size = 2) +
-  
-  # Add smoothing line
-  geom_smooth(method = "lm", 
-              se = TRUE, 
-              color = "blue", 
-              size = 0.5) +
-  
-  # Add text labels for each point
+  # Add text labels 
   geom_text(aes(label = area_layer_level), 
             vjust = 1.5, 
             hjust = 0.5, 
             size = 2,
-            check_overlap = TRUE) +  
+            check_overlap = TRUE) +
   
-  
+  #regression equation, R-squared, and p-value
   stat_poly_eq(aes(label = paste(stat(eq.label), 
-                                 stat(rr.label), 
-                                 stat(p.value.label), 
-                                 sep = "~~~")),
+                                  stat(rr.label), 
+                                  stat(p.value.label), 
+                                  sep = "~~~")),
                formula = y ~ x, 
                parse = TRUE, 
                size = 2) +
-  
- 
+
+  # titles and labels
   labs(
     title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
     x = "Lithic Volumetric Density",
     y = "Retouch Frequency"
   ) +
-  
- 
+
+  # Apply log scales
+  scale_x_log10() +
   scale_y_log10() +
   
   
@@ -2229,59 +2190,12 @@ WABI_Level <- ggplot(sum_depth_sheet,
 
 print(WABI_Level)
 
+
 ```
 
 ```{r}
 
 
-# Create the ggplot
-WABI_Level <- ggplot(sum_depth_sheet, 
-            aes(x = lithic_dens,
-                y = retouch_freq)) +
-  
-  # Add points
-  geom_point(color = 
-               "black", 
-             size = 2) +
-  
-  # line with log scale
-
-stat_smooth(method = "lm", 
-            formula = y ~ log(x), 
-            se = TRUE, aes(group = 1), 
-            color = "blue", 
-            size = 0.5)
-
-
-  # Add text labels for each point
-  geom_text(aes(label = area_layer_level), 
-            vjust = -1, 
-            hjust = -0.5, 
-            size = 2.5) +
-  
-  # Add regression equation, R-squared, and p-value
-  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
-               formula = y ~ log(x), 
-               parse = TRUE, 
-               size = 2) +
-  
-  # Add titles and labels
-  labs(
-    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-    x = "Lithic Volumetric Density",
-    y = "Retouch Frequency"
-  ) +
-  
-  
-  scale_x_log10() +
-  
-  theme(
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 12)
-  )
-
-print(WABI_Level)
 
 ```
 
@@ -2402,157 +2316,9 @@ tl_final_area %>%
 
 ```{r}
 
-
-```
-
-```{r}
-
-```
-
-```{r}
-# Load required packages
-library(ggplot2)
-library(cowplot)
-
-# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("blade", "bladelet", "flake"))
-
-# Plot Utilization by Blank2
-plot_utilization <- ggplot(tl4_filtered, aes(Blank2, Utilization)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Utilization by Blank",
-       x = "Blank2",
-       y = "Utilization") +
-  theme_minimal()
-
-# Plot Retouch by Blank
-plot_retouch <- ggplot(tl4_filtered, aes(Blank2, Retouch)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Retouch by Blank",
-       x = "Blank2",
-       y = "Retouch") +
-  theme_minimal()
-
-# Plot shine by Blank
-plot_shine <- ggplot(tl4_filtered, aes(x = Blank2, y = shine2)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "shine by Blank",
-       x = "Blank2",
-       y = "shine2") +
-  theme_minimal()
-
-# Combine the plots using cowplot or patchwork
-plot_combined <- cowplot::plot_grid(plot_utilization, plot_retouch, plot_shine, ncol = 3)
+#WABI:
 
 
-print(plot_combined)
-
-```
-
-```{r}
-
-#|label: fig_
-#|fig-cap:  vs Debitage
-#|fig-height: 5
-
-# Filter data
-tl4__blank %>% 
-  filter(Blank2 %in% c('tp1', 'ta', 'd1')) %>% 
-  select(Blank2, 
-         `Width (mm)`, 
-         `Thickness (mm)`, 
-         `Length (mm)`) %>%
-mutate(`Thickness (mm)` = as.numeric(`Thickness (mm)`))
-
-# Pivot data to longer format
-long_data <- tl3_dimention_blank %>% 
-  pivot_longer(cols = c(`Width (mm)`, `Thickness (mm)`, `Length (mm)`), 
-               names_to = "Dimension", 
-               values_to = "Value")
-
-# Create boxplot
-ggplot(long_data, aes(x = area, y = Value)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap(~Dimension, scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-
-
-```
-
-```{r}
-library(ggbeeswarm)
-tl3_dimention_blank <- tl3 %>% 
-  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
-  pivot_longer(-area) %>% 
-  ggplot() +
-  aes(area,
-      value) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap( ~ name,
-              scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-  
-```
-
-```{r}
-library(ggbeeswarm)
-tl3 %>% 
-  filter(area %in% tl3_area_tally_greater_than_n$area) %>% 
-  pivot_longer(-area) %>% 
-  ggplot() +
-  aes(area,
-      value) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap( ~ name,
-              scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-```
-
-```{r}
-#| label: fig-Width-of-Artifacts-Area-A-by-depth
-#| fig-cap: "Width of Artifacts by depth (Area A)"
-#| fig-height: 5
-tl %>%
-  filter(AREA == "A") %>%
-  select(
-         `Width (mm)`,
-         `DEPTH (cm)`) %>%
-  ggplot() +
-  aes(x = `DEPTH (cm)`,
-      y = `Width (mm)`) +
-  geom_boxplot() +
-  theme_minimal()
-```
-
-```{r}
-#| label: Width of Artifacts (Area A)
-#| fig-cap: "Width of Artifacts (Area A)"
-#| fig-height: 5
-
-tl1 %>%
-  filter(AREA == "TP1") %>%
-  select(AREA, `Width (mm)`) %>%
-  ggplot() +
-  aes(x = `Width (mm)`) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Width of Debitage (mm)", 
-       y = "Frequency", 
-       title = "Histogram of Width for Area TP1" )+
-  theme_minimal()
-```
-
-WABI:
-
-```{r}
 # regression plot-layer
 library(ggplot2)
 library(ggpmisc)
@@ -2734,7 +2500,7 @@ final_table <- blank_freq %>%
   inner_join(retouch_freq, by = "layer") 
 
 
-# Printing the final table
+
 print(final_table)
 
 ```
@@ -2775,7 +2541,7 @@ fviz_contrib(res_pca,
 ```{r}
 library(factoextra)
 
-# Visualize the contributions of variables to the second principal component
+# contributions of variables to the second principal component
 fviz_contrib(res_pca,
              axes = 2,   
              choice = "var") 
@@ -2785,7 +2551,7 @@ fviz_contrib(res_pca,
 ```{r}
 library(factoextra)
 
-# Creating a biplot
+#  biplot
 fviz_pca_biplot(res_pca)
 ```
 
@@ -2825,17 +2591,17 @@ fviz_pca_var(res_pca)
 ```
 
 ```{r}
-
+# Run PCA
 library(FactoMineR)
 library(factoextra)
 
-# Run PCA
+
 res_pca <- PCA(final_table_rownames, graph = FALSE)
 
-# Get the loadings (coefficients) of original variables for each principal component
+# Get the coefficients of original variables for each principal component
 loadings_matrix <- res_pca$var$coord
 
-# Print the loadings matrix
+
 print(loadings_matrix)
 
 ```
@@ -2859,7 +2625,7 @@ df <- data.frame(Eigenvalue = eigenvalues,
 
 rownames(df) <- c("Dim1", "Dim2")
 
-# Print the table
+
 print(df)
 
 ```
@@ -3133,7 +2899,6 @@ fviz_contrib(res_pca_area, axes = 2, choice = "var")
 ```
 
 ```{r}
-#|fig-cap: Contribution of variables for each of the tow relevant PCA dimensions
 
 # having Dim1 and Dim2 plots next to each other
 
@@ -3189,7 +2954,6 @@ fviz_eig(res_pca_area)
 ```{r}
 # Correlation plots of variables for each of the tow relevant PCA dimensions
 
-
 fviz_pca_var(res_pca_area, 
              
              repel = TRUE) + 
@@ -3218,11 +2982,11 @@ fviz_pca_biplot(res_pca_area, labelsize = 3, repel = TRUE)
 ```
 
 ```{r}
-# Create the initial biplot without individual labels
+# biplot 
 p <- fviz_pca_biplot(res_pca_area, label = "none", 
                      repel = TRUE, labelsize = 4)
 
-# Add the text labels for the areas using their coordinates from the PCA result
+
 p + geom_text(aes(x = res_pca_area$ind$coord[, 1], 
                   y = res_pca_area$ind$coord[, 2], 
                   label = pca_final_table_area$area), 
@@ -3521,495 +3285,4 @@ print(core_counts)
 
 ```
 
-OK
 
-```{r}
-#| label: fig-1-layer
-#| fig-cap: "Type of Removals"
-#| fig-height: 5
-
-#Type of blank based on Layers
-
-library(ggbeeswarm)
-
-tl4 %>% 
-  filter(!is.na(layer) & Blank2 %in% c('bladelet', 
-                                       'blade', 
-                                       'flake')) %>% 
-
-  # Create bar plot
-  ggplot() +
-  aes(x = layer, 
-      fill = Blank2) +
-  geom_bar(position = "dodge") +
-  labs(x = "Area", 
-       y = "Number", 
-       fill = "Blank Type") +
-  theme_minimal()
-
-```
-
-```{r}
-#Type of core based on Layers
-
-library(ggbeeswarm)
-
-tl4 %>% 
-  filter(!is.na(layer) & 
-           `core-typology` %in% c('bullet','prismatic','pyramid')) %>% 
-
-  # Create bar plot
-  ggplot() +
-  aes(x = layer, 
-      fill = `core-typology`) +
-  geom_bar(position = "dodge") +
-  labs(x = "Area", 
-       y = "Number", 
-       fill = "Blank Type") +
-  theme_minimal()
-```
-
-consistency in dimention:
-
-```{r}
-#|label: fig_2
-#|fig-cap: "Boxplot for each Dimention"
-#|fig-height: 5
-
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-# Set the value for n
-n <- 100
-
-# Tally by area
-tl_final_area_tally <- tl_final_area %>%
-  group_by(area) %>%
-  tally()
-
-# Filter areas with more than n rows
-tl_final_area_tally_greater_than_n <- tl_final_area_tally %>%
-  filter(n >= n)
-
-# Filter data based on areas with more than n rows
-tl_final_area_filtered <- tl_final_area %>%
-  filter(area %in% tl_final_area_tally_greater_than_n$area) %>%
-  filter(!is.na(blank) & blank != "")
-
-# Select and mutate dimensions
-tl_final_area_selected <- tl_final_area_filtered %>%
-  select(area, width, thickness, length) %>%
-  mutate(
-    width = as.numeric(width),
-    thickness = as.numeric(thickness),
-    length = as.numeric(length)
-  )
-
-# Pivot data to longer format
-tl_final_area_long <- tl_final_area_selected %>%
-  pivot_longer(cols = c(width, thickness, length), 
-               names_to = "Dimension", 
-               values_to = "Value")
-
-# Create the box plot
-ggplot(tl_final_area_long, aes(x = area, y = Value)) +
-  geom_boxplot() +
-  facet_wrap(~Dimension, scales = "free") +
-  labs(x = "Area", y = "Value") +
-  theme_minimal()
-
-
-```
-
-```{r}
-#|label: fig_3
-#|fig-cap: Dimention By Area
-#|ffig-height: 5
-
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(ggbeeswarm)
-
-# Create boxplot
-ggplot(tl_final_area_long, 
-       aes(x = area, y = Value)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap(~Dimension, scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-```
-
-```{r}
-
-
-```
-
-```{r}
-#|label: fig_2-layer
-#|fig-cap: "Boxplot for each Dimention"
-#|fig-height: 5
-
-
-n <- 100
-
-# Tally count of each layer
-tl_final_layer_tally <- tl_final_area %>% 
-  group_by(layer) %>% 
-  tally()
-
-# Filter layers with more than n rows
-tl_final_layer_tally_greater_than_n <- tl_final_layer_tally %>% 
-  filter(n >= n)
-
-# Filter data for layers with more than n rows
-tl_final_layer_filtered <- tl_final_area %>% 
-  filter(layer %in% tl_final_layer_tally_greater_than_n$layer)
-
-# Select and mutate
-tl_final_layer_selected <- tl_final_layer_filtered %>%
-  select(layer, 
-         `width`, 
-         `thickness`, 
-         `length`) %>%
-  mutate(across(c
-                (
-           `width`, 
-           `thickness`, 
-           `length`), 
-           as.numeric)
-         )
-
-# Pivot longer
-tl_final_layer_long <- tl_final_layer_selected %>%
-  pivot_longer(cols = 
-                 c(width, 
-                   thickness, 
-                   length), 
-               names_to = 
-                 "Dimension", 
-               values_to = 
-                 "Value") %>%
-  drop_na(Value)
-
-# Create box plot
-ggplot(tl_final_layer_long, 
-       aes(layer, 
-           Value)) +
-  
-  geom_boxplot() +
-  facet_wrap(~Dimension, 
-             scales = "free") +
-  labs(x = "Layer", 
-       y = "Value") +
- 
-   theme_minimal()
-
-
-
-```
-
-```{r}
-#|label: fig_3-layer
-#|fig-cap: Dimension By Layer
-#|fig-height: 5
-
-# Create boxplot
-ggplot(tl_final_layer_long, 
-       aes(x = layer, y = Value)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 0.01) +
-  facet_wrap(~Dimension, scales = "free_y") +
-  scale_y_log10() +
-  theme_minimal()
-
-```
-
-```{r}
-#|label: fig_4-width
-#|fig-cap: "Width of Artifacts (Area A)"
-#| fig-height: 5
-tl_final_area %>%
- filter(area == "ta") %>%
-  select(area, 
-         width) %>%
-  ggplot() +
-  aes(x = width) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Width of Debitage (mm)", 
-       y = "Frequency" )+
-  theme_minimal()
-```
-
-```{r}
-#|label: fig_5-width
-#|fig-cap: "Width of Artifacts (Area A, D1, TP1)"
-#|fig-height: 5
-
-tl_final_area %>%
-  filter(area %in% 
-           c("ta", "d1", "tp1")) %>%
-  mutate(width = as.numeric(width)) %>%  # Explicitly convert to numeric
- 
-   select(area, 
-          `width`) %>%
-  ggplot() +
-  
-  aes(x = width) +  # Make sure the aesthetic mapping is correct
-  
-  geom_histogram(binwidth = 2) +
-  
-  labs(x = "Width of Debitage (mm)", 
-       y = "Frequency" ) +
-  
-  facet_wrap(~area, 
-             ncol = 1) +
-  
-  theme_minimal()
-
-```
-
-```{r}
-#|label: fig_5-width-layer
-#|fig-cap: "Width of Artifacts (Area A, D1, TP1)"
-#|fig-height: 5
-
-tl_final_area %>%
-  filter(layer %in% c("a", 
-                      "c", 
-                      "e or d", 
-                      "e", 
-                      "d")) %>%
-  mutate(width = as.numeric(width)) %>%  # Convert to numeric
-  select(layer, width) %>%
-  ggplot() +
-  aes(x = width) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Width of Debitage (mm)", y = "Frequency") +
-  facet_wrap(~layer, ncol = 1) +
-  theme_minimal()
-
-```
-
-```{r}
-    
-```
-
-```{r}
-#|label: fig_6-thickness-layer
-#|fig-cap: "Thickness of Artifacts (Layers A, C, E or D)"
-#|fig-height: 5
-
-tl_final_area %>%
- filter(layer %in% c("a", 
-                     "c", 
-                     "e or d", 
-                     "d", 
-                     "e")) %>%
- mutate(thickness = as.numeric(thickness)) %>% 
-  select(layer, 
-         thickness) %>%
-  ggplot() +
-  aes(x = thickness) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Thickness of Debitage (mm)", 
-       y = "Frequency" )+
-  facet_wrap(~layer , ncol = 1) +
-  theme_minimal()
-
-```
-
-```{r}
-#|label: fig_7
-#|fig-cap: "Length of Artifacts (Area A, D1, TP1)"
-#|fig-height: 5
-
-tl3 %>%
-  filter(Blank_part == "complete", area %in% c("ta", "tp1", "d1")) %>%
-  mutate(`Length (mm)` = as.numeric(`Length (mm)`)) %>%
-  select(area, 
-         `Length (mm)`) %>%
-  ggplot() +
-  aes(x = `Length (mm)`) +
-  geom_histogram(binwidth = 2) +
-  labs(x = "Length of Debitage (mm)", 
-       y = "Frequency") +
-  facet_wrap(~area, ncol = 1) +
-  theme_minimal()
-
-```
-
-```{r}
-#| label: fig-7-length-layer
-#| fig-cap: Length of Artefact based on layers
-#| fig-height: 5
-tl3 %>% 
-  filter(layer %in% c("layer a" , "layer d" , "layer e" , "layer c" , "layer e or d")) %>% 
-  mutate(`Length (mm)` = as.numeric(`Length (mm)`)) %>% 
-  select(layer, `Length (mm)`) %>% 
-  ggplot(aes(x = `Length (mm)`)) + 
-  geom_histogram(binwidth = 2) +
-  labs(x = "Length of Debitage (mm)" ,
-       y = "Frequency") + 
-  facet_wrap(~layer, ncol = 1) + 
-  theme_minimal()
-
-
-```
-
-```{r}
-#|label: NA 
-#|fig-cap: "tool typology"
-#|fig-height: 5
-
-
-
-```
-
-```{r}
-library(ggplot2)
-
-# Calculate the counts for debitage and 
-counts <- tl4_tool_Blank %>%
-  group_by(debitage, ) %>%
-  summarise(count = n())
-
-# Create the bar plot
-ggplot(counts, 
-       aes(x = factor(debitage), 
-           y = count, 
-           fill = factor(debitage))) +
-  
-  geom_bar(stat = "identity", 
-           position = "dodge") +
-  
-  # Move the labels slightly above the bars
-  geom_text(aes(label = count), 
-            vjust = -0.5) +  
-  
-  geom_hline(data = counts %>% 
-               filter( == 1), 
-             aes(yintercept = count),
-             linetype = "dashed", 
-             color = "red") +
-  labs(title = "Debitage vs. ",
-       x = "",
-       y = "Numbers") +
-  theme_minimal()
-
-
-```
-
-```{r}
-# Calculate the counts for debitage and 
-counts <- tl4_tool_Blank %>%
-  group_by(Retouch = 1,  =1) %>%
-  summarise(count = n())
-
-# Create the bar plot
-ggplot(counts, 
-       aes(x = factor( = 1), 
-           y = count, 
-           fill = factor( = 1))) +
-  
-  geom_bar(stat = "identity", 
-           position = "dodge") +
-  
-  # Move the labels slightly above the bars
-  geom_text(aes(label = count), 
-            vjust = -0.5) +  
-  
-  geom_hline(data = counts %>% 
-               filter( == 1), 
-             aes(yintercept = count),
-             linetype = "dashed", 
-             color = "red") +
-  labs(title = " vs. formal ",
-       x = "",
-       y = "Numbers") +
-  theme_minimal()
-```
-
-```{r}
-#|label: fig_
-#|fig-cap: ""
-#| fig-height: 5
-tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake")) %>%
-  select(Blank2, shine2 = 1) %>%
-  ggplot() +
-  aes(x = shine2) +
-  geom_bar() +
-  labs(x = "shine", 
-       y = "Frequency" )+
-  theme_minimal()
-
-
-tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake")) %>%
-  select(Blank2, Retouch = 1) %>%
-  ggplot() +
-  aes(x = Retouch) +
-  geom_bar() +
-  labs(x = "Retouch", 
-       y = "Frequency" )+
-  theme_minimal()
-
-
-tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake")) %>%
-  select(Blank2, Utilization = 1) %>%
-  ggplot() +
-  aes(x = Utilization) +
-  geom_bar() +
-  labs(x = "Utilization", 
-       y = "Frequency" )+
-  theme_minimal()
-
-```
-
-```{r}
-library(ggplot2)
-library(patchwork)
-
-plot_shine <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", 
-                       "blade", 
-                       "flake")) %>%
-  select(Blank2, shine2 = 1) %>%
-  ggplot() +
-  aes(x = shine2) +
-  geom_bar() +
-  labs(x = "shine", y = "Frequency") +
-  theme_minimal()
-
-plot_retouch <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", 
-                       "blade", 
-                       "flake")) %>%
-  select(Blank2, 
-         Retouch = 1) %>%
-  ggplot() +
-  aes(x = Retouch) +
-  geom_bar() +
-  labs(x = "Retouch", 
-       y = "Frequency") +
-  theme_minimal()
-
-plot_utilization <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake")) %>%
-  select(Blank2, Utilization = 1) %>%
-  ggplot() +
-  aes(x = Utilization) +
-  geom_bar() +
-  labs(x = "Utilization", y = "Frequency") +
-  theme_minimal()
-
-# Combine the plots using patchwork
-plot_combined <- plot_shine + plot_retouch + plot_utilization
-plot_combined
-
-```
