@@ -415,7 +415,7 @@ tl4 <- tl4 %>%
     SHINE = na_if(SHINE, "")
   )
 
-# Check unique values in the modified columns
+
 print(unique(tl4$SHINE))
 
 ```
@@ -1081,13 +1081,13 @@ ggplot() +
 tl4 <- tl4 %>%
   mutate(across(everything(), as.character))
 
-# Then replace 'NA', 'na', or '0' with R's NA
+# replace 'NA', 'na', or '0' with R's NA
 tl4 <- tl4 %>%
   mutate(across(everything(), ~na_if(., "NA"))) %>%
   mutate(across(everything(), ~na_if(., "na"))) %>%
   mutate(across(everything(), ~na_if(., "0")))
 
-# Show the updated data frame
+
 print(tl4)
 
 ```
@@ -1152,6 +1152,17 @@ tl_final <- tl_final  %>%
 ```
 
 ```{r}
+#set the value of utilization to NA only for the rows where `sickle shine` == 1. 
+#All other rows should remain unchanged
+
+#unsuccessful, should try again later
+
+
+
+```
+
+
+```{r}
 # Update the 'typology-tool-core' column based on 'Retouch'
 tl_final <- tl_final %>% 
   mutate(
@@ -1185,6 +1196,7 @@ tl_final <- tl_final %>%
 print(tl_final)
 
 ```
+
 
 ```{r}
 tl_final <- tl_final %>% 
@@ -1402,6 +1414,13 @@ unique(tl_final$`core`)
 ```{r}
 
 
+```
+
+
+
+```{r}
+
+
 library(dplyr)
 
 
@@ -1515,8 +1534,8 @@ AREA_LAYER:
 summary_table_al <- tl_final %>%
   group_by(al) %>%  
   summarise(
-    `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
+    `Cores (n)` = sum(!is.na(core)),  
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
     `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
     `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
     `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
@@ -1973,7 +1992,7 @@ summary_table2_layer <- merge(summary_table2_layer, density_data_layer, by = "la
 WABI_AL Ta-e → 13 m3 Ta-d → 45 m3 D1-c → 0.675 m3 Tp-c → 1.44 m3 D1-a → 1.575 m3
 
 ```{r}
-# Create a tibble with example data
+# Create a tibble 
 summary_table2_area <- tibble(
   area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
   lithic_volumetric_density = c(51.2, 110.9, 45.1, 100.2, 88.3),
@@ -1995,7 +2014,7 @@ summary_table2_area <- tibble(
 )
 
 # Create the ggplot
-p <- ggplot(summary_table2_area, 
+WABI_AL <- ggplot(summary_table2_area, 
             aes(x = lithic_volumetric_density,
                                      y = retouch_frequency)) +
   
@@ -2039,21 +2058,249 @@ p <- ggplot(summary_table2_area,
     plot.title = element_text(size = 12)
   )
 
-print(p)
+print(WABI_AL)
 
 ```
+
 
 ```{r}
 
 library(googlesheets4)
 
-data_sheet <- "https://docs.google.com/spreadsheets/d/16yLb-RyIQ7x2jFEH_Q7OZYTwlEAXJgFu/edit#gid=2014421097" 
+sum_depth_sheet <- "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0" 
+
+sum_depth_sheet <- read_sheet(sum_depth_sheet)
+
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(area_layer_level = paste0(toupper(area), "_", layer, "_", level)) %>%
+  relocate(area_layer_level, .after = level) 
+
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(retouch_freq = round(retouch_tool / total_lithics, 2),
+         lithic_dens = round(total_lithics / volume, 2)
+  )
 
 
-sum_depth_sheet <- read_sheet(data_sheet, sheet = "sum_depth")
+
+write_sheet(sum_depth_sheet, ss = sheet_url)
+
 
 
 ```
+
+
+```{r}
+# Create the ggplot
+WABI_Level <- ggplot(sum_depth_sheet, 
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  
+ 
+  geom_point(color = "black", size = 2) +
+  
+
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              color = "blue", 
+              size = 0.5) +
+
+
+  geom_text(aes(label = area_layer_level), 
+            vjust = 1.5, 
+            hjust = 0.5, 
+            size = 2,
+            check_overlap = TRUE) +
+  
+
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                 stat(rr.label), 
+                                 stat(p.value.label), 
+                                 sep = "~~~")),
+               formula = y ~ x, 
+               parse = TRUE, 
+               size = 2) +
+  
+  # Add titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+print(WABI_Level)
+
+```
+
+
+```{r}
+# Create the ggplot with y-axis on a log scale
+WABI_Level <- ggplot(sum_depth_sheet, 
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  
+  # Add points with different shapes based on area
+  geom_point(aes(shape = area), size = 2) +
+  
+  # Add smoothing line
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              color = "blue", 
+              size = 0.5) +
+  
+  # Add regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                 stat(rr.label), 
+                                 stat(p.value.label), 
+                                 sep = "~~~")),
+               formula = y ~ x, 
+               parse = TRUE, 
+               size = 2) +
+  
+  # Add titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+  # Apply log scale to y-axis
+  scale_y_log10() +
+  
+  # Add shape legend
+  scale_shape_manual(values = c(16, 17, 25)) +
+  
+  # Customize theme
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+# Print the plot
+print(WABI_Level)
+
+```
+
+
+```{r}
+# log-scale
+
+WABI_Level <- ggplot(sum_depth_sheet, 
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  
+  # Add points
+  geom_point(color = "black", size = 2) +
+  
+  # Add smoothing line
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              color = "blue", 
+              size = 0.5) +
+  
+  # Add text labels for each point
+  geom_text(aes(label = area_layer_level), 
+            vjust = 1.5, 
+            hjust = 0.5, 
+            size = 2,
+            check_overlap = TRUE) +  
+  
+  
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                 stat(rr.label), 
+                                 stat(p.value.label), 
+                                 sep = "~~~")),
+               formula = y ~ x, 
+               parse = TRUE, 
+               size = 2) +
+  
+ 
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+ 
+  scale_y_log10() +
+  
+  
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+
+print(WABI_Level)
+
+```
+
+
+
+
+```{r}
+
+
+# Create the ggplot
+WABI_Level <- ggplot(sum_depth_sheet, 
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  
+  # Add points
+  geom_point(color = 
+               "black", 
+             size = 2) +
+  
+  # line with log scale
+
+stat_smooth(method = "lm", 
+            formula = y ~ log(x), 
+            se = TRUE, aes(group = 1), 
+            color = "blue", 
+            size = 0.5)
+
+
+  # Add text labels for each point
+  geom_text(aes(label = area_layer_level), 
+            vjust = -1, 
+            hjust = -0.5, 
+            size = 2.5) +
+  
+  # Add regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
+               formula = y ~ log(x), 
+               parse = TRUE, 
+               size = 2) +
+  
+  # Add titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+  
+  scale_x_log10() +
+  
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+print(WABI_Level)
+
+```
+
+
+
 
 WABI_AREA
 
@@ -2063,7 +2310,7 @@ library(ggplot2)
 library(ggpmisc)
 
 # Plotting
-p <- ggplot(summary_table2_area, aes(x = lithic_volumetric_density, y = percent_retouch)) +
+p_area <- ggplot(summary_table2_area, aes(x = lithic_volumetric_density, y = percent_retouch)) +
   
   # Blue regression line with shaded area
   geom_smooth(method = "lm", 
@@ -2090,7 +2337,7 @@ p <- ggplot(summary_table2_area, aes(x = lithic_volumetric_density, y = percent_
        x = "Lithic Volumetric Density",
        y = "Retouch Frequency (%)")
 
-print(p)
+print(p_area)
 
 
 ```
@@ -2170,187 +2417,18 @@ tl_final_area %>%
 
 ```
 
+
+
 ```{r}
-
-library(dplyr)
-library(ggplot2)
-
-# Filter the data for the relevant categories
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% 
-           c("bladelet", 
-             "blade", 
-             "flake"))
-
-# Create separate bar plots for shine, Retouch, and Utilization
-plot_shine2 <- ggplot(tl4_filtered, aes(x = Blank2, fill = shine2)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Shine2 by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Shine2") +
-  theme_minimal()
-
-plot_retouch <- ggplot(tl4_filtered, aes(x = Blank2, fill = Retouch)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Retouch by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Retouch") +
-  theme_minimal()
-
-plot_utilization <- ggplot(tl4_filtered, aes(x = Blank2, fill = Utilization)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Utilization by Blank2",
-       x = "Blank2",
-       y = "Frequency",
-       fill = "Utilization") +
-  theme_minimal()
-
-# Combine the three plots side by side
-library(patchwork)
-combined_plots <- plot_shine2 + plot_retouch + plot_utilization
-combined_plots
-
 
 
 ```
 
 ```{r}
-library(dplyr)
-library(knitr)
-library(kableExtra)
-
-#table
-
-tl_final_aread <- tl_final_area %>%
-  filter(blank %in% c("bladelet", "blade", "flake"))  %>%
-
-
-
-  group_by(blank, utilization, `sickle shine`, retouch) %>%
-  summarise(count = n())
-
-
-table_kable <- kable(table_summary, format = "html", caption = "Summary Table", 
-                     col.names = c("Blank2", "Utilization", "shine2", "Retouch", "Count")) %>%
-  kable_styling(bootstrap_options = "striped")
-
-
-print(table_kable)
 
 ```
 
-```{r}
-#|label: fig_
-#|fig-cap: "Boxplot for each Dimention"
-#|fig-height: 5
 
-library(dplyr)
-library(ggplot2)
-
-# Filter the data to keep only bladelet, blade, and flake in the Blank column
-tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake"))
-
-tl4_tool_Blank_tally <- 
-  tl4_tool_Blank_filtered %>%
-  group_by(Blank2) %>%
-  tally()
-
-# Select dimensions and convert Thickness (mm) to numeric
-tl4_tool_Blank_selected <- 
-  tl4_tool_Blank_filtered %>% 
-  select(Blank2, 
-         Utilization, 
-         Retouch, 
-         shine2) 
-
-
-tl4_tool_Blank_long <- 
-  tl4_tool_Blank_selected %>% 
-  pivot_longer(cols = c(Utilization, Retouch, shine2), 
-               names_to = "Blank2", 
-               values_to = "Value")
-
-# Create boxplot
-ggplot(tl4_tool_Blank_long, aes(x = Blank2, y = Value)) +
-  geom_boxplot() +
-  facet_wrap(~Blank2, scales = "free") +
-  labs(x = "Blank", 
-       y = "Frequency") +
-  theme_minimal()
-
-
-
-
-
-
-```
-
-```{r}
-library(dplyr)
-library(ggplot2)
-
-# Filter the data to keep only bladelet, blade, and flake in the Blank2 column
-tl4_tool_Blank_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("bladelet", "blade", "flake"))
-
-tl4_tool_Blank_tally <- 
-  tl4_tool_Blank_filtered %>%
-  group_by(Blank2) %>%
-  tally()
-
-# Select dimensions and convert Thickness (mm) to numeric
-tl4_tool_Blank_selected <- 
-  tl4_tool_Blank_filtered %>% 
-  select(Blank2, 
-         Utilization, 
-         Retouch, 
-         shine2) 
-
-# Manually rename the duplicate columns
-names(tl4_tool_Blank_selected)[names(tl4_tool_Blank_selected) == "Blank2"] <- "Dimension"
-
-# Pivot data to longer format
-tl4_tool_Blank_long <- 
-  tl4_tool_Blank_selected %>% 
-  pivot_longer(cols = c(Utilization, Retouch, shine2), 
-               names_to = "", 
-               values_to = "Value")
-
-
-ggplot(tl4_tool_Blank_long, aes(x = Dimension, y = Value)) +
-  geom_boxplot() +
-  facet_wrap(~, scales = "free") +
-  labs(x = "Blank", 
-       y = "Frequency") +
-  theme_minimal()
-
-```
-
-```{r}
-
-# Load required packages
-library(ggplot2)
-
-# Filter the data to exclude the value 0 and keep only blade, bladelet, and flake
-tl4_filtered <- tl4_tool_Blank %>%
-  filter(Blank2 %in% c("blade", "bladelet", "flake"))
-
-# Create the plot with facetting
-tl4_plots <- ggplot(tl4_filtered, aes(x = Blank2, fill = Blank2)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Utilization, Retouch, and shine2 by Blank",
-       x = "Blank2",
-       y = "Count") +
-  facet_grid(. ~ Blank2, scales = "free") +
-  theme_minimal()
-
-
-print(tl4_plots)
-
-```
 
 ```{r}
 # Load required packages
