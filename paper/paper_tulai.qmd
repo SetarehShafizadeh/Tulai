@@ -1894,6 +1894,9 @@ volumes <- data.frame(
   volume = c(52, 5.76, 2.1375) # in m^3
 )
 
+tl_final_area <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1"))
+
 # Count the number of artifacts by area
 artifact_counts <- tl_final_area %>%
   filter(area %in% c("ta", "tp1", "d1")) %>%
@@ -1944,7 +1947,11 @@ library(kableExtra)
 kable(summary_table2_area, 
       caption = "Table 2. Lithic counts for each of the areas in Tula'i", 
       align = 'c',
-      col.names = c("Area", "Number of Retouched Lithics", "Total Number of Lithics", "Retouch frequency (%)", "Lithic Volumetric Density(pcs/(m^3)")) %>%
+      col.names = c("Area", 
+                    "Number of Retouched Lithics", 
+                    "Total Number of Lithics", 
+                    "Retouch frequency (%)", 
+                    "Lithic Volumetric Density(pcs/(m^3)")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11) %>%
   column_spec(1, width = "1cm") %>% 
   column_spec(2, width = "1cm") %>% 
@@ -2687,7 +2694,7 @@ print(paste("The total number of lithic artifacts is:", total_lithics))
 ```
 
 ```{r}
-# 5Calculate the retouched frequency for each area
+# Calculate the retouched frequency for each area
 library(dplyr)
 
 
