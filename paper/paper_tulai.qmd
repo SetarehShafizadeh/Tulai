@@ -1,0 +1,3255 @@
+---
+title: ""
+author: ""
+date: now
+format: 
+  html:
+    self-contained: true
+execute: 
+  warning: false
+  fig-dpi: 600
+title-block-published: "last updated"
+editor: visual
+---
+
+```{r}
+# load libraries
+library(tidyverse)
+library(here)
+library(ggpmisc)
+library(ggrepel)
+library(ggbeeswarm)
+```
+
+Cleaning Data:
+
+```{r}
+# Read the data
+tl <- read_csv(here("data/Tulai_Lithic_Assamblage.csv"))
+
+# Create a new data frame with renamed columns
+tl1 <- tl
+names(tl1)[1:2] <- c("lithic_id", 
+                     "TA")
+
+# modify TA column
+tl1 <- tl1 %>%
+  # Remove everything within brackets
+  mutate(TA = str_remove_all(TA, 
+                             "\\(.*\\)")) %>%  
+  
+  # Add slash between TA and numbers
+  mutate(TA = str_replace_all(TA, 
+                              "TA([0-9]+)", 
+                              "TA/\\1")) %>% 
+  # Add slash between numbers
+  mutate(TA = str_replace_all(TA, 
+                              "([0-9]+)/([0-9]+)", "\\1/\\2")) %>% 
+ # fill NA values in TA column
+  tidyr::fill(TA, .direction = "down") %>%
+  # Prepend 'TA/' to numbers
+  mutate(TA = if_else(str_detect(TA, 
+                                 "^[0-9]+$"), 
+                      paste0("TA/",
+                             TA), 
+                      TA)) %>% 
+  # Remove all non-alphanumeric characters
+  mutate(TA = str_replace_all(TA, 
+                              "[^[:alnum:] /]", 
+                              "")) %>% 
+  # Make all text lowercase
+  mutate(TA = tolower(TA)) %>% 
+  # Remove white space
+  mutate(TA = str_replace_all(TA, " ", ""))  %>%
+  # Separate 'TA' column into 'area' and 'depth' columns
+  separate(TA, into = c("area", 
+                        "depth"), 
+           sep = "/",
+           remove = FALSE,
+           convert = TRUE) %>%
+  # Convert 'depth' to numeric
+  mutate(depth = as.numeric(depth)) %>% 
+  # Create depth ranges
+  mutate(depth = case_when(
+             depth == 3 ~ "0-30 cm",
+             depth == 34 ~ "30-40 cm",
+             depth == 45 ~ "40-50 cm",
+             depth == 56 ~ "50-60 cm",
+             depth == 67 ~ "60-70 cm",
+             depth == 72 ~ "70-120 cm",
+             depth == 125 ~ "120-150 cm",
+             depth == 158 ~ "150-180 cm",
+             depth == 189 ~ "180-190 cm",
+             depth == 190 ~ "190-200 cm",
+             depth == 201 ~ "200-210 cm",
+             depth == 212 ~ "210-220 cm",
+             depth == 223 ~ "220-230 cm",
+             depth == 234 ~ "230-240 cm",
+             depth == 235 ~ "230-250 cm",
+             depth == 256 ~ "250-260 cm",
+             depth == 267 ~ "260-270 cm",
+             depth == 72 ~ "70-120 cm",
+             depth == 1 ~ "0-10 cm",
+             depth == 2 ~ "0-20 cm", 
+             depth == 13 ~ "10-30 cm",
+             depth == 19 ~ "10-90 cm",
+             depth == 23 ~ "20-30 cm",
+             depth == 34 ~ "30-40 cm",
+             depth == 45 ~ "40-50 cm",
+             depth == 51 ~ "50-100 cm",
+             depth == 56 ~ "50-60 cm",
+             depth == 57 ~ "50-70 cm",
+             depth == 89 ~ "80-90 cm",
+             depth == 91 ~ "90-100 cm",
+             depth == 101 ~ "100-110 cm",
+             depth == 112 ~ "110-120 cm",
+             depth == 123 ~ "120-130 cm",
+             depth == 124 ~ "120-140 cm",
+             depth == 23 ~ "20-30 cm",
+             depth == 46 ~ "40-60 cm",
+             depth == 78 ~ "70-80 cm",
+             depth == 235 ~ "230-250 cm",
+             depth == 12 ~ "10-20 cm",
+             depth == 90 ~ "90-100 cm",
+             
+             TRUE ~ as.character(depth)
+  )) %>% 
+  separate(depth, 
+           into = c("upper",
+                    "lower"),
+           sep = "-",
+           remove = FALSE,
+           convert = TRUE) %>% 
+  mutate(lower = parse_number(lower)) %>% 
+  rowwise() %>% 
+  mutate(midpoint = mean(c(upper, lower))) %>%
+# create 'layer' column
+  mutate(layer = case_when(
+      area == "tp1" & depth == "0-10 cm" ~ "c",
+      area == "tp1" & depth == "0-20 cm" ~ "c",
+      area == "tp1" & depth == "10-30 cm" ~ "c",
+      area == "tp1" & depth == "10-90 cm" ~ "c",
+      area == "tp1" & depth == "20-30 cm" ~ "c",
+      area == "tp1" & depth == "30-40 cm" ~ "c",
+      area == "tp1" & depth == "40-50 cm" ~ "c",
+      area == "tp1" & depth == "50-100 cm" ~ "c",
+      area == "tp1" & depth == "50-60 cm" ~ "c",
+      area == "tp1" & depth == "50-70 cm" ~ "c",
+      area == "tp1" & depth == "80-90 cm" ~ "c",
+      area == "tp1" & depth == "90-100 cm" ~ "c",
+      area == "tp1" & depth == "100-110 cm" ~ "c",
+      area == "tp1" & depth == "110-120 cm" ~ "c",
+      area == "tp1" & depth == "120-130 cm" ~ "c",
+      area == "tp1" & depth == "120-140 cm" ~ "c",
+      area == "d1" & depth == "0-20 cm" ~ "c",
+      area == "d1" & depth == "20-30 cm" ~ "c",
+      area == "d1" & depth == "40-60 cm" ~ "a",
+      area == "d1" & depth == "50-60 cm" ~ "a",
+      area == "d1" & depth == "60-70 cm" ~ "a",
+      area == "d1" & depth == "70-80 cm" ~ "a",
+      area == "ta" & depth == "0-30 cm" ~ "e",
+      area == "ta" & depth == "30-40 cm" ~ "e",
+      area == "ta" & depth == "40-50 cm" ~ "e",
+      area == "ta" & depth == "50-60 cm" ~ "e",
+      area == "ta" & depth == "60-70 cm" ~ "e",
+      area == "ta" & depth == "70-120 cm" ~ "d",
+      area == "ta" & depth == "120-150 cm" ~ "d",
+      area == "ta" & depth == "150-180 cm" ~ "d",
+      area == "ta" & depth == "180-190 cm" ~ "d",
+      area == "ta" & depth == "190-200 cm" ~ "d",
+      area == "ta" & depth == "200-210 cm" ~ "d",
+      area == "ta" & depth == "210-220 cm" ~ "d",
+      area == "ta" & depth == "220-230 cm" ~ "d",
+      area == "ta" & depth == "230-240 cm" ~ "d",
+      area == "ta" & depth == "230-250 cm" ~ "d",
+      area == "ta" & depth == "250-260 cm" ~ "d",
+      area == "ta" & depth == "260-270 cm" ~ "d",
+     
+      TRUE ~ NA_character_
+  ))
+
+
+# Remove specific columns
+tl1 %>% 
+  select(-c("AREA", 
+            "DEPTH (cm)", 
+            "Raw Material", 
+            "Colour/Grain/Opacity", 
+            "Pattern"))
+```
+
+```{r}
+# exploring Data
+
+tl1 %>% 
+  group_by(midpoint) %>% 
+  tally() %>% 
+  drop_na(midpoint) %>% 
+ggplot() + 
+  aes(midpoint, n) +
+  geom_col()
+```
+
+```{r}
+# exploring Data
+
+tl1 %>% 
+  group_by(layer) %>% 
+  tally() %>% 
+  drop_na(layer) %>% 
+ggplot() + 
+  aes(layer, n) +
+  geom_col()
+```
+
+```{r}
+# exploring Data
+
+tl2 <- tl1 %>%
+  mutate(
+    Blank = case_when(
+      Breakage %in% c("0", "1", NA_character_) ~ Blank,  
+      
+      TRUE ~ Breakage  
+    )
+  )
+
+
+```
+
+```{r}
+# Cleaning Blank column
+
+tl2 <- tl2 %>%
+  mutate(
+    Blank = str_to_lower(Blank),
+    Blank = str_trim(Blank),
+    Blank = str_replace_all(Blank, "[./]", "-"),
+    Blank = str_replace_all(Blank, "\\s*-\\s*", "-")
+  ) %>%
+  mutate(Blank = case_when(
+             Blank == "peo" ~                      "bladelet-pro",
+             Blank == "pro" ~                      "bladelet-pro",
+             Blank == "bladelet-dis" ~             "bladelet-dis",
+             Blank == "microblade" ~               "bladelet-complete",
+             Blank == "microblade-pro" ~           "bladelet-pro",
+             Blank == "microblade-med" ~           "bladelet-med",
+             Blank == "micrpblade-dis" ~           "bladelet-dis",
+             Blank == "dis" ~                      "bladelet-dis",
+             Blank == "bladelrt-med" ~             "bladelet-med",
+             Blank == "bladelet-mes" ~             "bladelet-med",
+             Blank == "bladelet-,ed" ~             "bladelet-med",
+             Blank == "bladelet-bladelet-med" ~    "bladelet-med",
+             Blank == "medial" ~                   "bladelet-med",
+             Blank == "bladelet-bladelet-pro" ~    "bladelet-pro",
+             Blank == "bladelert-pro" ~            "bladelet-pro",
+             Blank == "microblade-medial" ~        "bladelet-med",
+             Blank == "nicroblade-pro" ~           "bladelet-pro",
+             Blank == "microblade-?" ~             "bladelet-complete",
+             Blank == "med" ~                      "bladelet-med",
+             Blank == "bladeler-pro" ~             "bladelet-pro",
+             Blank == "microblade-dis" ~           "bladelet-dis",
+             Blank == "microblde-dis" ~            "bladelet-dis",
+             Blank == "bladlet-pro" ~              "bladelet-pro",
+             Blank == "indistinct" ~               "bladelet-med",
+             Blank == "flake" ~                    "flake-complete",
+             Blank == "dladelet-pro" ~             "bladelet-pro",
+             Blank == "dladelet-pro" ~             "bladelet-pro",
+             Blank == "bldelet-bladelet-pro" ~     "bladelet-pro",
+             Blank == "bldelet-pro" ~              "bladelet-pro",
+             Blank == "nicroblade-pro" ~           "bladelet-pro",
+             Blank == "microblade-?" ~             "bladelet-med",
+             Blank == "bladelt-pro" ~              "bladelet-pro",
+             Blank == "bladeket-med" ~             "bladelet-med",
+             Blank == "nicroblade-pro" ~           "bladelet-pro",
+             Blank == "blaelet" ~                  "bladelet-complete",
+             Blank == "bladele-med" ~              "bladelet-med",
+             Blank == "bladelet-nearly complete" ~ "bladelet-complete",
+             Blank == "blade-nearly complete" ~    "blade-complete",
+             Blank == "bladelet-?" ~               "bladelet-complete",
+             Blank == "flake?" ~                   "flake-complete",
+             Blank == "micrpblade-dis" ~           "bladelet-dis",
+             Blank == "blaelet-med" ~              "bladelet-med",
+             Blank == "blaedlet-pro" ~             "bladelet-pro",  
+             Blank == "bladelt-pro" ~              "bladelet-pro",   
+             Blank == "bladelet-nearly complete"~  "bladelet-complete", 
+             Blank == "microblade-med" ~           "bladelet-med", 
+             Blank == "bldelet-bladelet-pro" ~     "bladelet-pro",
+             Blank == "bldelet-flake" ~            "blade-complete",
+             Blank == "mwdial" ~                   "bladelet-med",
+             Blank == "blade" ~                    "blade-complete",
+             Blank == "bladelt" ~                  "bladelet-complete",
+             Blank == "bladlet" ~                  "bladelet-complete",
+             Blank == "bladlet-med" ~              "bladelet-med",
+             Blank == "bladelt-med" ~              "bladelet-med",
+             Blank == "flaje" ~                    "flake",
+             Blank == "flke" ~                     "flake",
+             Blank == "bladelet" ~                 "bladelet-complete",
+             Blank == "NA" ~                       "bladelet-",
+             Blank == "thick flake" ~              "flake",
+             Blank == "flke-mid" ~                 "flake-med",
+             Blank == "flake-blade" ~              "flake",
+             Blank == "angular flake?" ~           "flake",
+             Blank == "flake-prox" ~               "flake-pro",
+             Blank == "fklae-dis" ~                "flake-dis",
+             Blank == "bladelete" ~                "bladelet",
+             Blank == "NA" ~                    NA_character_,
+    TRUE ~ Blank
+  )) %>%
+  mutate(Blank = na_if(Blank, ""))
+             
+rev(sort(table(tl2$Blank)))
+
+# BM: still many typos and unusual categories in here, why is that? Can they be fixed?
+
+tl3 <- tl2 %>%
+  separate(Blank, 
+           into = c("Blank2", "Blank_part"),
+           sep = "-",
+           remove = FALSE,
+           convert = TRUE)
+
+na_rows <- which(is.na(tl2$Blank))
+print(na_rows)
+
+zero_rows <- which(tl2$Blank == "0")
+print(zero_rows)
+
+one_rows <- which(tl2$Blank == "1")
+print(one_rows)
+
+rev(sort(table(tl3$Blank2))) # BM: still a lot of typos on the categories here, can you fix them?
+
+```
+
+```{r}
+# BM: this is an unusual coding pattern, I'm curious about where you got it from?
+tl3 <- tl3 %>%
+  mutate(
+    Blank2 = case_when(
+      Blank2 == "flake" ~ "flake",  # Keep "flake" as it is
+      (`Core Typology` %in% c("0", "NA", "na", "-", ".") | 
+       is.na(`Core Typology`) | 
+       `Core Typology` == "") & `Width (mm)` < 12 ~ "bladelet",
+      (`Core Typology` %in% c("0", "NA", "na", "-", ".") | 
+       is.na(`Core Typology`) | 
+       `Core Typology` == "") & `Width (mm)` >= 12 ~ "blade",
+      TRUE ~ Blank2
+    )
+  )  %>%
+  mutate(
+    Blank2 = case_when(
+      Blank2 %in% c("blade", "bladelet", "flake") ~ Blank2,
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+```{r}
+# Remove rows based on row names
+# tl3 <- tl3[!(rownames(tl3) %in% c("1030", "644", "543")), ]
+
+# BM: why are we removing these rows? A comment here would be good to explain. A simpler way, by referencing the row numbers directly:
+
+tl3 <- tl3[-c(1030, 644, 543), ]
+```
+
+```{r}
+tl4 <- tl3 %>%
+  mutate(
+    Utilization = if_else(Retouch == "1", 
+                          NA_character_, 
+                          as.character(Utilization))
+  )
+
+```
+
+```{r}
+
+tl4 <- tl4 %>%
+  # BM: the problem with this combination of mutate_all and ifelse that you use below is that they 
+  # coerce all columns to be the same data type, so you'll see that all the numeric
+  # columns are now character columns after you run these lines. So you need to
+  # coerce those number columns back to numeric type so you can plot and compute
+  # with them
+  mutate_all(~ ifelse(is.na(.x) | .x == "", NA, .x)) %>% 
+  # BM: what does this next line do?
+  mutate_all(~ str_replace(., "(?<=\\D)\\*(?=\\D)|\\s+|[*?!]+", "")) %>%
+  # BM: what is this SHINE variable? I'm not familiar with it
+  mutate(
+    SHINE = str_trim(SHINE) %>% 
+            str_to_title(),
+    shine2 = SHINE
+  ) %>%
+  mutate(
+    shine2 = case_when(
+      SHINE %in% c("Subparallel", 
+                   "Parallel", 
+                   "Sub-Parallel", 
+                   "Parallel-Subprarallel",
+                   "Scaled", 
+                   "Sub-Paralel", 
+                   "Sub-Parallell", 
+                   "Sub-Paallel",
+                   "Sub-Paralell", 
+                   "Sub-Prallel", 
+                   "L:semiparallel/R:scaled",
+                   "Semiparallel", 
+                   "Semi-Parallel", 
+                   "Scaled/Sub-Parallel",
+                   "Seb-Parallel", 
+                   "Semi-Abrupt") ~ NA_character_,
+      TRUE ~ SHINE
+    ),
+    Utilization = if_else(Utilization == "0", NA_character_, Utilization),
+    Retouch =     if_else(Retouch == "0", NA_character_, Retouch),
+    SHINE =       if_else(SHINE == "0", NA_character_, SHINE),
+    shine2 =      if_else(shine2 == "0", NA_character_, shine2),
+    Blank2 =      if_else(Blank2 == "0", NA_character_, Blank2)
+  ) %>% 
+  mutate(
+    SHINE = na_if(SHINE, "")
+  )
+
+
+# BM: I think this is a better way to inspect:
+rev(sort(table(tl4$SHINE)))
+rev(sort(table(tl4$shine2)))
+
+```
+
+```{r}
+
+# Convert 'NA' and 'na' strings to actual NA
+tl4$`Core Typology` <- na_if(tl4$`Core Typology`, "NA")
+tl4$`Core Typology` <- na_if(tl4$`Core Typology`, "na")
+
+tl4 <- tl4 %>%
+  mutate(
+    `Core Typology` = str_to_lower(`Core Typology`),
+    `Core Typology` = str_trim(`Core Typology`),
+    # BM: what does this regex do in the next line?
+    `Core Typology` = str_replace_all(`Core Typology`, "^[-._/NA\\s]*$|^\\s*$", "0")
+  ) %>%
+  mutate(`Core Typology` = case_when(
+    `Core Typology` == "flatcore" ~ "flat-pressure",
+             `Core Typology` == "rejuvention" ~ "rejuvenation piece-NA",
+             `Core Typology` == "pressureprymidal core" ~ "pyramid-pressure",
+             `Core Typology` == "pressureflat core" ~ "flat-pressure",
+             `Core Typology` == "pressurebullet core" ~ "bullet-pressure",
+             `Core Typology` == "prussurebullet core" ~ "bullet-pressure",
+             `Core Typology` == "prismaticcore" ~ "prismatic-percussion",
+             `Core Typology` == "pyramidalpressure core" ~ "pyramid-pressure",
+             `Core Typology` == "flatcore with one debitage surface/pressure" ~ "flat-pressure",
+             `Core Typology` == "corefragment" ~ "core fragment-NA",
+             `Core Typology` == "cilandrical/pressure" ~ "cylinder-pressure",
+             `Core Typology` == "bullet/pressure" ~ "bullet-pressure",
+             `Core Typology` == "pyramidal/pressure" ~ "pyramid-pressure",
+             `Core Typology` == "percussion/pyramidal" ~ "pyramid-pressure",
+             `Core Typology` == "flat/pressure" ~ "flat-pressure",
+             `Core Typology` == "pyramidal/ percussion??" ~ "pyramid-pressure",
+             `Core Typology` == "pyramidal/ peressure" ~ "pyramid-pressure",
+             `Core Typology` == "pyramidal/ pressure" ~ "pyramid-pressure",
+             `Core Typology` == "pressure" ~ "pyramid-pressure",
+             `Core Typology` == "multidirectional/percussion" ~ "shapeless-percussion",
+             `Core Typology` == "prismatic/ percussion" ~ "pyramid-pressure",
+             `Core Typology` == "flatcore/ unidirectional/pressure" ~ "flat-pressure",
+             `Core Typology` == "heavilyused" ~ "NA",
+             `Core Typology` == "burnt" ~ "NA",
+             `Core Typology` == "patinated" ~ "NA",
+             `Core Typology` == "pyramidal(bullet)/pressure" ~ "bullet-pressure",
+             `Core Typology` == "cylandrycal/ bidirectional pressure core" ~ "bullet-pressure",
+             `Core Typology` == "pyramidal/unidirectional pressure bullet core" ~ "bullet-pressure",
+             `Core Typology` == "pyramidal/unidirectional pressure  core" ~ "pyramid-pressure",
+             `Core Typology` == "pyramidal/unidirectional pressure  core" ~ "pyramid-pressure",
+             `Core Typology` == "bladelet" ~ "bullet-pressure",
+             `Core Typology` == "lip" ~ "NA",
+             `Core Typology` == "bladlet" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(30.56)" ~ "pyramid-pressure",
+             `Core Typology` == "bladelet(28.55.6)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(16.28.1)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(40 5.7)" ~ "pyramid-pressure",
+             `Core Typology` == "bladelet(23.2 2.3)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet-flakeblade(41 16)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(28 6.7)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(28 6.7)" ~ "bullet-pressure",
+             `Core Typology` == "bladelet(3512.6/7)" ~ "pyramid-pressure",
+             `Core Typology` == "bladelet(27.307.5)" ~ "bullet-pressure",
+    `Core Typology` == "pressure/pyramidal" ~ "pyramid-pressure",
+    `Core Typology` == "bladeletcore" ~ "bullet-pressure",
+    `Core Typology` == "pyramidal? / pressure" ~ "pyramid-pressure",
+    `Core Typology` == "prismatic" ~ "pyramid-pressure",
+    
+    `Core Typology` == "bullet" ~ "bullet-pressure",
+    
+    TRUE ~ `Core Typology`
+  )) %>%
+# Separate 'Core Typology' into 'core-typology' and 'core-technology'
+  separate(`Core Typology`, 
+           into = c("core-typology", "core-technology"),
+           sep = "-",
+           remove = FALSE,
+           convert = TRUE)
+
+# Convert 'NA' and 'na' in new columns to actual NA
+tl4$`core-typology` <- na_if(tl4$`core-typology`, "na")
+tl4$`core-technology` <- na_if(tl4$`core-technology`, "na")
+
+# Check the unique values again
+# BM: still many typos, are they important?
+rev(sort(table((tl4$`core-typology`))))
+rev(sort(table((tl4$`core-technology`))))
+
+```
+
+```{r}
+
+tl4 <- tl4 %>%
+  mutate(
+    Typology = str_to_lower(Typology),
+    Typology = str_trim(Typology),
+    Typology = str_replace_all(Typology, "^[-._/NA\\s]*$|^\\s*$", "0")
+  ) %>%
+  mutate(
+    # BM: wow, seems like almost each artefact is its own type! 
+    # BM: That is not ideal for statistical analysis
+    # BM: This looks like it was very time-consuming to simplify. 
+    Typology = case_when(
+      `Typology` == "notch, truncated" ~ "tool/notch;truncated piece",
+      `Typology` == "retouchpiece" ~ "tool/retouched piece",
+      `Typology` == "endscraper" ~ "tool/end scraper",
+      `Typology` == "notch" ~ "tool/notch",
+      `Typology` == "sidescraper" ~ "tool/side scraper",
+      `Typology` == "doubleside scraper" ~ "tool/double side scraper",
+      `Typology` == "convergentscraper (?)" ~ "tool/convergent scraper",
+      `Typology` == "doublenotch on retouched piece" ~ "tool/double notch",
+      `Typology` == "retouchpieces" ~ "tool/retouched piece",
+      `Typology` == "burin(?)/ notch/scraper" ~ "tool/burin-notch-scraper",
+      `Typology` == "borer" ~ "tool/perforator-borer",
+      `Typology` == "retouchedpiece" ~ "tool/retouched piece",
+      `Typology` == "notch/side scraper" ~ "tool/notch-side scraper",
+      `Typology` == "corefragment" ~ "core/core fragment",
+      `Typology` == "backed" ~ "tool/backed knife",
+      `Typology` == "doubleside scraper ?" ~ "tool/double side scraper",
+      `Typology` == "inversedenticulate" ~ "tool/denticulate",
+      `Typology` == "retouchpieces/ side scraper?" ~ "tool/side scraper",
+      `Typology` == "sidescraper ?" ~ "tool/side scraper",
+      `Typology` == "notch-denticulate" ~ "tool/notch-denticulate",
+      `Typology` == "borer/drill" ~ "tool/perforator-drill",
+      `Typology` == "retouchedpiece (side scraper?)" ~ "tool/side scraper",
+      `Typology` == "retouchepiece (side scraper?)" ~ "tool/side scraper",
+      `Typology` == "retouchedpiece (double side scraper)" ~ "tool/double side scraper",
+      `Typology` == "retouchedpiece (double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "retouchepiece" ~ "tool/retouched piece",
+      `Typology` == "inversenotch" ~ "tool/notch",
+      `Typology` == "retouchepiece (double side scaraper?)" ~ "tool/double side scraper",
+      `Typology` == "retouchedpiece( double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "notchon retouche piece" ~ "tool/notch",
+      `Typology` == "retouchedpiece (souble side scraper)" ~ "tool/double side scraper",
+      `Typology` == "point" ~ "tool/perforator-point",
+      `Typology` == "chunk" ~ "NA/NA",
+      `Typology` == "coretablet" ~ "core/core tablet",
+      `Typology` == "core" ~ "core/shapeless",
+      `Typology` == "denticulate" ~ "tool/denticulate",
+      `Typology` == "doublenotch (haft)" ~ "tool/double notch",
+      `Typology` == "retouchedpiece (fine retouch)" ~ "tool/retouched piece",
+      `Typology` == "endscraper on retouched piece" ~ "tool/end scraper",
+      `Typology` == "retouchedpiece (serrated scraper)" ~ "tool/serrated scraper",
+      `Typology` == "truncation" ~ "tool/truncated piece",
+      `Typology` == "rejuventionpiece" ~ "core/rejuvenation piece",
+      `Typology` == "notch/denticulate" ~ "tool/notch-denticulate",
+      `Typology` == "retoucheduse on breakage" ~ "tool/retouched piece",
+      `Typology` == "inversenotch/endscraper" ~ "tool/notch-end scraper",
+      `Typology` == "alternatingside scraper" ~ "tool/side scraper",
+      `Typology` == "alternatedouble side scraper" ~ "tool/double side scraper",
+      `Typology` == "truncation/sidescaraper" ~ "tool/truncated piece",
+      `Typology` == "doublenotch" ~ "tool/double notch",
+      `Typology` == "borer/awl" ~ "tool/perforator-awl",
+      `Typology` == "roundscraper?" ~ "tool/round scraper",
+      `Typology` == "doublenotch scraper" ~ "tool/double notch scraper",
+      `Typology` == "corerejuvention (core tablet?)" ~ "core/core tablet",
+      `Typology` == "truncationاریبب" ~ "tool/truncated piece",
+      `Typology` == "retouchedpiece (side scraper)" ~ "tool/side scraper",
+      `Typology` == "retochedpice" ~ "tool/retouched piece",
+      `Typology` == "truncation/notch" ~ "tool/truncated piece-notch",
+      `Typology` == "doublealternate scraper" ~ "tool/double side scraper",
+      `Typology` == "awl/ inverse notch" ~ "tool/notch",
+      `Typology` == "retouchedpiece (alternate scraper?)" ~ "tool/double side scraper",
+      `Typology` == "inverseside scraper" ~ "tool/side scraper",
+      `Typology` == "usedcore rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreplatform rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "corerejuvention platform" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention blade" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention blade??" ~ "core/rejuvenation piece",
+      `Typology` == "coreedge rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreedge rejivention" ~ "core/rejuvenation piece",
+      `Typology` == "retouchedpice (side scraper?)" ~ "tool/side scraper" ,
+      `Typology` == "scraper" ~ "tool/side scraper",
+      `Typology` == "sickleblade" ~ "tool/sickle shine",
+      `Typology` == "coretool (scraper)" ~ "tool/scraper-on core piece",
+      `Typology` == "retouchedpiece (scraper)" ~ "tool/side scraper",
+      `Typology` == "inversedenticulate?" ~ "tool/denticulate",
+      `Typology` == "retouchedpiece (scraper?)" ~ "tool/side scraper",
+      `Typology` == "coreside rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "truncation/endscraper" ~ "tool/endscraper on truncated piece",
+      `Typology` == "retouchedpice(double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "doublescraper" ~ "tool/double side scraper",
+      `Typology` == "dendiculate" ~ "tool/denticulate",
+      `Typology` == "double-scraper" ~ "tool/double side scraper",
+      `Typology` == "pyramidalcore" ~ "core/pyramid",
+      `Typology` == "bulletcore" ~ "core/bullet",
+      `Typology` == "corerejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "pyrmidalcore" ~ "core/pyramid",
+      `Typology` == "corepreperation" ~ "core/core preparation piece",
+      `Typology` == "crested" ~ "core/crested bladelet",
+      `Typology` == "preperationblade" ~ "core/core preperation",
+      `Typology` == "burin" ~ "tool/burin",
+      `Typology` == "serrateddenticulate" ~ "tool/serrated scraper",
+      `Typology` == "saw:serrated denticulate" ~ "tool/serrated scraper",
+      `Typology` == "serratedused" ~ "tool/serrated scraper",
+      `Typology` == "corepreeration" ~ "tool/core preparation piece",
+      `Typology` == "coreprepearation" ~ "tool/core preparation piece",
+      `Typology` == "awl" ~ "tool/perforator-awl",
+      `Typology` == "notch.inverse" ~ "tool/notch",
+      `Typology` == "point.notch" ~ "tool/perforator-point;notch",
+      `Typology` == "inversescraper" ~ "tool/side scraper",
+      `Typology` == "roundendscraper" ~ "tool/round scraper",
+      `Typology` == "alternate.scraper" ~ "tool/double side scraper",
+      `Typology` == "convergentscraper/disc scraper" ~ "tool/scraper-convergent scraper",
+      `Typology` == "serratedside scraper" ~ "tool/serrated scraper",
+      `Typology` == "debri" ~ "NA/NA",
+      `Typology` == "distalpart of a drill" ~ "tool/perforator-drill",
+      `Typology` == "corepreperation?" ~ "core/core preparation piece",
+      `Typology` == "preformend of a borer" ~ "tool/perforator-borer; preform",
+      `Typology` == "used" ~ "tool/used",
+      `Typology` == "distalend of a inverse sidescraper" ~ "tool/side scraper",
+      `Typology` == "retouchedblade" ~ "tool/retouched piece",
+      `Typology` == "drill" ~ "tool/perforator-drill",
+      `Typology` == "corerejuvention tablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore" ~ "core/pyramid",
+      `Typology` == "flake-bladecore" ~ "core/mixed",
+      `Typology` == "notch, truncated" ~ "tool/notch;truncated piece",
+      `Typology` == "retouchpiece" ~ "tool/retouched piece",
+      `Typology` == "endscraper" ~ "tool/end scraper",
+      `Typology` == "notch" ~ "tool/notch",
+      `Typology` == "sidescraper" ~ "tool/side scraper",
+      `Typology` == "doubleside scraper" ~ "tool/double side scraper",
+      `Typology` == "convergentscraper (?)" ~ "tool/convergent scraper",
+      `Typology` == "doublenotch on retouched piece" ~ "tool/double notch",
+      `Typology` == "retouchpieces" ~ "tool/retouched piece",
+      `Typology` == "burin(?)/ notch/scraper" ~ "tool/burin-notch-scraper",
+      `Typology` == "borer" ~ "tool/perforator-borer",
+      `Typology` == "retouchedpiece" ~ "tool/retouched piece",
+      `Typology` == "notch/side scraper" ~ "tool/notch-side scraper",
+      `Typology` == "corefragment" ~ "core/core fragment",
+      `Typology` == "backed" ~ "tool/backed knife",
+      `Typology` == "doubleside scraper ?" ~ "tool/double side scraper",
+      `Typology` == "inversedenticulate" ~ "tool/denticulate",
+      `Typology` == "retouchpieces/ side scraper?" ~ "tool/side scraper",
+      `Typology` == "sidescraper ?" ~ "tool/side scraper",
+      `Typology` == "notch-denticulate" ~ "tool/notch-denticulate",
+      `Typology` == "borer/drill" ~ "tool/perforator-drill",
+      `Typology` == "retouchedpiece (side scraper?)" ~ "tool/side scraper",
+      `Typology` == "retouchepiece (side scraper?)" ~ "tool/side scraper",
+      `Typology` == "retouchedpiece (double side scraper)" ~ "tool/double side scraper",
+      `Typology` == "retouchedpiece (double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "retouchepiece" ~ "tool/retouched piece",
+      `Typology` == "inversenotch" ~ "tool/notch",
+      `Typology` == "retouchepiece (double side scaraper?)" ~ "tool/double side scraper",
+      `Typology` == "retouchedpiece( double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "notchon retouche piece" ~ "tool/notch",
+      `Typology` == "retouchedpiece (souble side scraper)" ~ "tool/double side scraper",
+      `Typology` == "point" ~ "tool/perforator-point",
+      `Typology` == "chunk" ~ "NA/NA",
+      `Typology` == "coretablet" ~ "core/core tablet",
+      `Typology` == "core" ~ "core/shapeless",
+      `Typology` == "denticulate" ~ "tool/denticulate",
+      `Typology` == "doublenotch (haft)" ~ "tool/double notch",
+      `Typology` == "retouchedpiece (fine retouch)" ~ "tool/retouched piece",
+      `Typology` == "endscraper on retouched piece" ~ "tool/end scraper",
+      `Typology` == "retouchedpiece (serrated scraper)" ~ "tool/serrated scraper",
+      `Typology` == "truncation" ~ "tool/truncated piece",
+      `Typology` == "rejuventionpiece" ~ "core/rejuvenation piece",
+      `Typology` == "notch/denticulate" ~ "tool/notch-denticulate",
+      `Typology` == "retoucheduse on breakage" ~ "tool/retouched piece",
+      `Typology` == "inversenotch/endscraper" ~ "tool/notch-end scraper",
+      `Typology` == "alternatingside scraper" ~ "tool/side scraper",
+      `Typology` == "alternatedouble side scraper" ~ "tool/double side scraper",
+      `Typology` == "truncation/sidescaraper" ~ "tool/truncated piece",
+      `Typology` == "doublenotch" ~ "tool/double notch",
+      `Typology` == "borer/awl" ~ "tool/perforator-awl",
+      `Typology` == "roundscraper?" ~ "tool/round scraper",
+      `Typology` == "doublenotch scraper" ~ "tool/double notch scraper",
+      `Typology` == "corerejuvention (core tablet?)" ~ "core/core tablet",
+      `Typology` == "truncationاریبب" ~ "tool/truncated piece",
+      `Typology` == "retouchedpiece (side scraper)" ~ "tool/side scraper",
+      `Typology` == "retochedpice" ~ "tool/retouched piece",
+      `Typology` == "truncation/notch" ~ "tool/truncated piece-notch",
+      `Typology` == "doublealternate scraper" ~ "tool/double side scraper",
+      `Typology` == "awl/ inverse notch" ~ "tool/notch",
+      `Typology` == "retouchedpiece (alternate scraper?)" ~ "tool/double side scraper",
+      `Typology` == "inverseside scraper" ~ "tool/side scraper",
+      `Typology` == "usedcore rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreplatform rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "corerejuvention platform" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention blade" ~ "core/rejuvenation piece",
+      `Typology` == "coreside rejuvention blade??" ~ "core/rejuvenation piece",
+      `Typology` == "coreedge rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "coreedge rejivention" ~ "core/rejuvenation piece",
+      `Typology` == "retouchedpice (side scraper?)" ~ "tool/side scraper" ,
+      `Typology` == "scraper" ~ "tool/side scraper",
+      `Typology` == "sickleblade" ~ "tool/sickle shine",
+      `Typology` == "coretool (scraper)" ~ "tool/scraper-on core piece",
+      `Typology` == "retouchedpiece (scraper)" ~ "tool/side scraper",
+      `Typology` == "inversedenticulate?" ~ "tool/denticulate",
+      `Typology` == "retouchedpiece (scraper?)" ~ "tool/side scraper",
+      `Typology` == "coreside rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "truncation/endscraper" ~ "tool/endscraper on truncated piece",
+      `Typology` == "retouchedpice(double side scraper?)" ~ "tool/double side scraper",
+      `Typology` == "doublescraper" ~ "tool/double side scraper",
+      `Typology` == "dendiculate" ~ "tool/denticulate",
+      `Typology` == "double-scraper" ~ "tool/double side scraper",
+      `Typology` == "pyramidalcore" ~ "core/pyramid",
+      `Typology` == "bulletcore" ~ "core/bullet",
+      `Typology` == "corerejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "pyrmidalcore" ~ "core/pyramid",
+      `Typology` == "corepreperation" ~ "core/core preparation piece",
+      `Typology` == "crested" ~ "core/crested bladelet",
+      `Typology` == "preperationblade" ~ "core/core preperation",
+      `Typology` == "burin" ~ "tool/burin",
+      `Typology` == "serrateddenticulate" ~ "tool/serrated scraper",
+      `Typology` == "saw:serrated denticulate" ~ "tool/serrated scraper",
+      `Typology` == "serratedused" ~ "tool/serrated scraper",
+      `Typology` == "corepreeration" ~ "tool/core preparation piece",
+      `Typology` == "coreprepearation" ~ "tool/core preparation piece",
+      `Typology` == "awl" ~ "tool/perforator-awl",
+      `Typology` == "notch.inverse" ~ "tool/notch",
+      `Typology` == "point.notch" ~ "tool/perforator-point;notch",
+      `Typology` == "inversescraper" ~ "tool/side scraper",
+      `Typology` == "roundendscraper" ~ "tool/round scraper",
+      `Typology` == "alternate.scraper" ~ "tool/double side scraper",
+      `Typology` == "convergentscraper/disc scraper" ~ "tool/scraper-convergent scraper",
+      `Typology` == "serratedside scraper" ~ "tool/serrated scraper",
+      `Typology` == "debri" ~ "NA/NA",
+      `Typology` == "distalpart of a drill" ~ "tool/perforator-drill",
+      `Typology` == "corepreperation?" ~ "core/core preparation piece",
+      `Typology` == "preformend of a borer" ~ "tool/perforator-borer; preform",
+      `Typology` == "used" ~ "tool/used",
+      `Typology` == "distalend of a inverse sidescraper" ~ "tool/side scraper",
+      `Typology` == "retouchedblade" ~ "tool/retouched piece",
+      `Typology` == "drill" ~ "tool/perforator-drill",
+      `Typology` == "corerejuvention tablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore" ~ "core/pyramid",
+      `Typology` == "flake-bladecore" ~ "core/mixed",
+      `Typology` == "bladelet-corerejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "bladelet-corefragment" ~ "core/core fragment",
+      `Typology` == "pointedused" ~ "tool/perforator-point",
+      `Typology` == "microburin" ~ "tool/microburin",
+      `Typology` == "bladeletcore fragment" ~ "core/core fragment",
+      `Typology` == "rejuventionface flake" ~ "core/rejuvenation piece",
+      `Typology` == "corepreperation flake" ~ "core/core preparation piece",
+      `Typology` == "corerejuvention flake"  ~ "core/rejuvenation piece",
+      `Typology` == "unfinished  pyramid core" ~ "core/pyramid",
+      `Typology` == "bladeletcoretablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "debitage" ~ "NA/NA",
+      `Typology` == "bladeletcore  rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "inverseserrated scraper" ~ "tool/serrated scraper",
+      `Typology` == "backedknife" ~ "tool/backed knife",
+      `Typology` == "corepreparation" ~ "core/core preparation piece",
+      `Typology` == "primaryflake" ~ "core/primary flake",
+      `Typology` == "pointedconvergent scraper on bladelet" ~ "tool/perforator-point",
+      `Typology` == "trie" ~ "NA/NA",
+      `Typology` == "part of core tablet" ~ "core/core tablet",
+      `Typology` == "zaviedar" ~ "NA/NA",
+      `Typology` == "convergentscraper" ~ "tool/convergent scraper",
+      `Typology` == "preparationflake" ~ "core/core preparation piece",
+      `Typology` == "atypicalborer" ~ "tool/perforator-borer",
+      `Typology` == "naturalybacked knife" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "pyramidbladelet core" ~ "core/pyramid",
+      `Typology` == "flatbladelet core" ~ "core/flat",
+      `Typology` == "bladecore" ~ "core/pyramid",
+      `Typology` == "bulletbladelet core" ~ "core/bullet",
+      `Typology` == "coerejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "finishedbladelet core" ~ "core/bullet",
+      `Typology` == "failed pyramid core?" ~ "core/pyramid",
+      `Typology` == "pyramidplain bladelet core" ~ "core/pyramid",
+      `Typology` == "coeon flake" ~ "core/core on flake",
+      `Typology` == "coeejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "bladeletcoe rejuvention tablet?" ~ "core/core tablet",
+      `Typology` == "pyramidcore" ~ "core/pyramid",
+      `Typology` == "bladeletcore tablet" ~ "core/core tablet",
+      `Typology` == "pyramidbladeleet core" ~ "core/pyramid",
+      `Typology` == "flake" ~ "NA/NA",
+      `Typology` == "serrated" ~ "tool/serrated scraper",
+      `Typology` == "curvedretouched piece" ~ "tool/retouched piece",
+      `Typology` == "pyramidalbladelet core" ~ "core/pyramid",
+      `Typology` == "multidirectionalcore fragment" ~ "core/multidirectional core fragment",
+      `Typology` == "unidirectionalblade? core fragent" ~ "core/pyramid",
+      `Typology` == "backed/corerejuvention" ~ "tool/backed knife",
+      `Typology` == "unidirectionalbladelet core" ~ "core/pyramid",
+      `Typology` == "unifacialbalde core fragment?" ~ "core/pyramid",
+      `Typology` == "flakedetached from a bladelet core" ~ "core/core preparation piece",
+      `Typology` == "corepreparation tablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore fragent" ~ "core/core fragment-pyramid",
+      `Typology` == "alternatescraper??" ~ "tool/double side scraper",
+      `Typology` == "endscraper.onrejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "inverseserrated" ~ "tool/serrated scraper",
+      `Typology` == "patination.omitted" ~ "NA/NA",
+      `Typology` == "trapze" ~ "tool/geometric-triangle",
+      `Typology` == "trapzoid" ~ "tool/geometric-triangle",
+      `Typology` == "borer.drill" ~ "tool/perforator-drill",
+      `Typology` == "serraed" ~ "tool/serrated scraper",
+      `Typology` == "bladeletcore on a flake" ~ "core/core on flake",
+      `Typology` == "geofact" ~ "NA/NA",
+      `Typology` == "denticulateborer?" ~ "tool/perforator-borer;denticulate",
+      `Typology` == "sideborer-denticulate" ~ "tool/perforator-borer;denticulate",
+      `Typology` == "borer.awl" ~ "tool/perforator-awl",
+      `Typology` == "roundscraper" ~ "tool/round scraper",
+      `Typology` == "truncationon a bladelet core" ~ "tool/truncated piece",
+      `Typology` == "truncation.notch" ~ "tool/truncated piece;notch",
+      `Typology` == "backed-denticulate" ~ "tool/backed;denticulate",
+      `Typology` == "brokendrill" ~ "tool/perforator-drill",
+      `Typology` == "drillbroken" ~ "tool/perforator-drill",
+      `Typology` == "point/broken drill" ~ "tool/perforator-point",
+      `Typology` == "brokendrill?" ~ "tool/perforator-drill",
+      `Typology` == "partialyserrated" ~ "tool/serrated scraper",
+      `Typology` == "naturallybacked" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "transversescraper" ~ "tool/transverse scraper",
+      `Typology` == "naturalybacked" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "awl-notch" ~ "tool/perforator-awl",
+      `Typology` == "psedulevalois" ~ "tool/psedulevalois flake",
+      `Typology` == "alternatingdenticulate" ~ "tool/denticulate",
+      `Typology` == "usedcore fragment" ~ "tool/core tool-used core fragment",
+      `Typology` == "multidirectionalmicroflake core" ~ "core/multidirectional flake core",
+      `Typology` == "mixedpyramidal core" ~ "core/pyramid",
+      `Typology` == "usedbladecore fragment" ~ "tool/core tool-used core fragment",
+      `Typology` == "multidirectionalbladelet core fragment" ~ "core/multidirectional bladelet core",
+      `Typology` == "unidirectionalbladelet core.cylinder" ~ "core/prismatic",
+      `Typology` == "pyrymedalmixed core" ~ "core/pyramid",
+      `Typology` == "pyramedial/bullet core" ~ "core/bullet",
+      `Typology` == "corefragent" ~ "core/core fragment",
+      `Typology` == "pyramedialbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "unidirectionalbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "unifacialunidirectional bladelet core" ~ "core/pyramid",
+      `Typology` == "unidirectionalblade core" ~ "core/pyramid",
+      `Typology` == "pyramidalbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "corerejuvention?" ~ "core/rejuvenation piece",
+      `Typology` == "flatburin? point?" ~ "tool/flat burin",
+      `Typology` == "primaryblade" ~ "core/primary blade",
+      `Typology` == "trihedralgeometric" ~ "tool/geometric-triangle",
+      `Typology` == "lunate" ~ "tool/geometric-lunate",
+      `Typology` == "corepaltform rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "pressurebladelet core /semi flat" ~ "core/pyramid",
+      `Typology` == "failedpercussion blade core/semi pyramedal" ~ "core/pyramid",
+      `Typology` == "percussionbladelet core/unidirectional" ~ "core/pyramid-percussion",
+      `Typology` == "percussion.unidirectional.blade-flakecore" ~ "core/mixed-percussion",
+      `Typology` == "obliqueretouched bladelet" ~ "tool/retouched piece",
+      `Typology` == "percussionunidirectional pyramidal  bladelet core" ~ "core/pyramid",
+      `Typology` == "lunategeometric" ~ "tool/geometric-lunate",
+      `Typology` == "awl on a core rejuvention" ~ "tool/perforator-awl on core rejuvenation piece",
+      `Typology` == "truncated" ~ "tool/truncated piece",
+      `Typology` == "multiplenotch" ~ "tool/notch",
+      `Typology` == "dishedconvergent bladelet" ~ "tool/convergent scraper",
+      `Typology` == "bipolarpercussion blade-bladelet core" ~ "core/bipolar-percussion",
+      `Typology` == "bladeletbullet core" ~ "core/bullet",
+      `Typology` == "alternatingserrated" ~ "tool/serrated scraper",
+      `Typology` == "shaplesscore" ~ "core/shapeless",
+      `Typology` == "corepreparation?" ~ "core/core preparation piece",
+      `Typology` == "obliqueretouched" ~ "tool/retouched piece",
+      `Typology` == "corepreparation flake" ~ "core/core preparation piece",
+      `Typology` == "backeddenticulate" ~ "tool/backed;denticulate",
+      `Typology` == "awlnotch" ~ "tool/perforator-awl;notch",
+      `Typology` == "scraperburin?" ~ "tool/burin;scraper",
+      `Typology` == "notchround scraper" ~ "tool/round scraper;notch",
+      `Typology` == "corerejuvention tablet round scraper" ~ "tool/round scraper on core tablet",
+      `Typology` == "alternatescraper" ~ "tool/double side scraper",
+      `Typology` == "coreplatform preperation flake" ~ "core/rejuvenation piece",
+      `Typology` == "coreplatform rejuvention tablet" ~ "core/core tablet",
+      `Typology` == "brokenpyramidal core bladelet" ~ "core/pyramid",
+      `Typology` == "pyramidalbladelet core/semi bullet?" ~ "core/bullet",
+      `Typology` == "coreside rejuvention flake?" ~ "core/rejuvenation piece-side",
+      `Typology` == "unidirectionalpressure bladelet core/unifacila" ~ "core/pyramid",
+      `Typology` == "coreplatform rejuvention tablet/or multidirectional core" ~ "core/rejuvenation piece",
+      `Typology` == "bulletbladlet core" ~ "core/bullet",
+      `Typology` == "cylinderbipolar bladelet core" ~ "core/prismatic",
+      `Typology` == "backedknife/core platform rejuvenation" ~ "tool/backed knife",
+      `Typology` == "flatunifacial bladelet core" ~ "core/flat",
+      `Typology` == "coreprepration flake" ~ "core/core preparation piece",
+      `Typology` == "coreplatform preperation" ~ "core/core preparation piece-platform",
+      `Typology` == "borerpreform" ~ "tool/perforator-borer",
+      `Typology` == "rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "borerpreform?" ~ "tool/perforator-borer",
+      `Typology` == "inversnotch" ~ "tool/notch",
+      `Typology` == "alternateconvergent" ~ "tool/convergent scraper",
+      `Typology` == "unidirectionalbladelet/flake-blade core" ~ "core/mixed",
+      `Typology` == "unidirectionalmixed core" ~ "core/mixed",
+      `Typology` == "unidirectionalflat bladelet core" ~ "core/flat",
+      `Typology` == "" ~ "NA-NA",
+      `Typology` == "na" ~ "NA-NA",
+      `Typology` == "bladelet-corerejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "bladelet-corefragment" ~ "core/core fragment",
+      `Typology` == "pointedused" ~ "tool/perforator-point",
+      `Typology` == "microburin" ~ "tool/microburin",
+      `Typology` == "bladeletcore fragment" ~ "core/core fragment",
+      `Typology` == "rejuventionface flake" ~ "core/rejuvenation piece",
+      `Typology` == "corepreperation flake" ~ "core/core preparation piece",
+      `Typology` == "corerejuvention flake"  ~ "core/rejuvenation piece",
+      `Typology` == "unfinished  pyramid core" ~ "core/pyramid",
+      `Typology` == "bladeletcoretablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "debitage" ~ "NA/NA",
+      `Typology` == "bladeletcore  rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "inverseserrated scraper" ~ "tool/serrated scraper",
+      `Typology` == "backedknife" ~ "tool/backed knife",
+      `Typology` == "corepreparation" ~ "core/core preparation piece",
+      `Typology` == "primaryflake" ~ "core/primary flake",
+      `Typology` == "pointedconvergent scraper on bladelet" ~ "tool/perforator-point",
+      `Typology` == "trie" ~ "NA/NA",
+      `Typology` == "part of core tablet" ~ "core/core tablet",
+      `Typology` == "zaviedar" ~ "NA/NA",
+      `Typology` == "convergentscraper" ~ "tool/convergent scraper",
+      `Typology` == "preparationflake" ~ "core/core preparation piece",
+      `Typology` == "atypicalborer" ~ "tool/perforator-borer",
+      `Typology` == "naturalybacked knife" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "pyramidbladelet core" ~ "core/pyramid",
+      `Typology` == "flatbladelet core" ~ "core/flat",
+      `Typology` == "bladecore" ~ "core/pyramid",
+      `Typology` == "bulletbladelet core" ~ "core/bullet",
+      `Typology` == "coerejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "finishedbladelet core" ~ "core/bullet",
+      `Typology` == "failed pyramid core?" ~ "core/pyramid",
+      `Typology` == "pyramidplain bladelet core" ~ "core/pyramid",
+      `Typology` == "coeon flake" ~ "core/core on flake",
+      `Typology` == "coeejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "bladeletcoe rejuvention tablet?" ~ "core/core tablet",
+      `Typology` == "pyramidcore" ~ "core/pyramid",
+      `Typology` == "bladeletcore tablet" ~ "core/core tablet",
+      `Typology` == "pyramidbladeleet core" ~ "core/pyramid",
+      `Typology` == "flake" ~ "NA/NA",
+      `Typology` == "serrated" ~ "tool/serrated scraper",
+      `Typology` == "curvedretouched piece" ~ "tool/retouched piece",
+      `Typology` == "pyramidalbladelet core" ~ "core/pyramid",
+      `Typology` == "multidirectionalcore fragment" ~ "core/multidirectional core fragment",
+      `Typology` == "unidirectionalblade? core fragent" ~ "core/pyramid",
+      `Typology` == "backed/corerejuvention" ~ "tool/backed knife",
+      `Typology` == "unidirectionalbladelet core" ~ "core/pyramid",
+      `Typology` == "unifacialbalde core fragment?" ~ "core/pyramid",
+      `Typology` == "flakedetached from a bladelet core" ~ "core/core preparation piece",
+      `Typology` == "corepreparation tablet" ~ "core/core tablet",
+      `Typology` == "bladeletcore fragent" ~ "core/core fragment-pyramid",
+      `Typology` == "alternatescraper??" ~ "tool/double side scraper",
+      `Typology` == "endscraper.onrejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "inverseserrated" ~ "tool/serrated scraper",
+      `Typology` == "patination.omitted" ~ "NA/NA",
+      `Typology` == "trapze" ~ "tool/geometric-triangle",
+      `Typology` == "trapzoid" ~ "tool/geometric-triangle",
+      `Typology` == "borer.drill" ~ "tool/perforator-drill",
+      `Typology` == "serraed" ~ "tool/serrated scraper",
+      `Typology` == "bladeletcore on a flake" ~ "core/core on flake",
+      `Typology` == "geofact" ~ "NA/NA",
+      `Typology` == "denticulateborer?" ~ "tool/perforator-borer;denticulate",
+      `Typology` == "sideborer-denticulate" ~ "tool/perforator-borer;denticulate",
+      `Typology` == "borer.awl" ~ "tool/perforator-awl",
+      `Typology` == "roundscraper" ~ "tool/round scraper",
+      `Typology` == "truncationon a bladelet core" ~ "tool/truncated piece",
+      `Typology` == "truncation.notch" ~ "tool/truncated piece;notch",
+      `Typology` == "backed-denticulate" ~ "tool/backed;denticulate",
+      `Typology` == "brokendrill" ~ "tool/perforator-drill",
+      `Typology` == "drillbroken" ~ "tool/perforator-drill",
+      `Typology` == "point/broken drill" ~ "tool/perforator-point",
+      `Typology` == "brokendrill?" ~ "tool/perforator-drill",
+      `Typology` == "partialyserrated" ~ "tool/serrated scraper",
+      `Typology` == "naturallybacked" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "transversescraper" ~ "tool/transverse scraper",
+      `Typology` == "naturalybacked" ~ "tool/backed knife-naturally backed knife",
+      `Typology` == "awl-notch" ~ "tool/perforator-awl",
+      `Typology` == "psedulevalois" ~ "tool/psedulevalois flake",
+      `Typology` == "alternatingdenticulate" ~ "tool/denticulate",
+      `Typology` == "usedcore fragment" ~ "tool/core tool-used core fragment",
+      `Typology` == "multidirectionalmicroflake core" ~ "core/multidirectional flake core",
+      `Typology` == "mixedpyramidal core" ~ "core/pyramid",
+      `Typology` == "usedbladecore fragment" ~ "tool/core tool-used core fragment",
+      `Typology` == "multidirectionalbladelet core fragment" ~ "core/multidirectional bladelet core",
+      `Typology` == "unidirectionalbladelet core.cylinder" ~ "core/prismatic",
+      `Typology` == "pyrymedalmixed core" ~ "core/pyramid",
+      `Typology` == "pyramedial/bullet core" ~ "core/bullet",
+      `Typology` == "corefragent" ~ "core/core fragment",
+      `Typology` == "pyramedialbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "unidirectionalbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "unifacialunidirectional bladelet core" ~ "core/pyramid",
+      `Typology` == "unidirectionalblade core" ~ "core/pyramid",
+      `Typology` == "pyramidalbladelet core fragment" ~ "core/pyramid",
+      `Typology` == "corerejuvention?" ~ "core/rejuvenation piece",
+      `Typology` == "flatburin? point?" ~ "tool/flat burin",
+      `Typology` == "primaryblade" ~ "core/primary blade",
+      `Typology` == "trihedralgeometric" ~ "tool/geometric-triangle",
+      `Typology` == "lunate" ~ "tool/geometric-lunate",
+      `Typology` == "corepaltform rejuvention flake" ~ "core/rejuvenation piece",
+      `Typology` == "pressurebladelet core /semi flat" ~ "core/pyramid",
+      `Typology` == "failedpercussion blade core/semi pyramedal" ~ "core/pyramid",
+      `Typology` == "percussionbladelet core/unidirectional" ~ "core/pyramid-percussion",
+      `Typology` == "percussion.unidirectional.blade-flakecore" ~ "core/mixed-percussion",
+      `Typology` == "obliqueretouched bladelet" ~ "tool/retouched piece",
+      `Typology` == "percussionunidirectional pyramidal  bladelet core" ~ "core/pyramid",
+      `Typology` == "lunategeometric" ~ "tool/geometric-lunate",
+      `Typology` == "awl on a core rejuvention" ~ "tool/perforator-awl on core rejuvenation piece",
+      `Typology` == "truncated" ~ "tool/truncated piece",
+      `Typology` == "multiplenotch" ~ "tool/notch",
+      `Typology` == "dishedconvergent bladelet" ~ "tool/convergent scraper",
+      `Typology` == "bipolarpercussion blade-bladelet core" ~ "core/bipolar-percussion",
+      `Typology` == "bladeletbullet core" ~ "core/bullet",
+      `Typology` == "alternatingserrated" ~ "tool/serrated scraper",
+      `Typology` == "shaplesscore" ~ "core/shapeless",
+      `Typology` == "corepreparation?" ~ "core/core preparation piece",
+      `Typology` == "obliqueretouched" ~ "tool/retouched piece",
+      `Typology` == "corepreparation flake" ~ "core/core preparation piece",
+      `Typology` == "backeddenticulate" ~ "tool/backed;denticulate",
+      `Typology` == "awlnotch" ~ "tool/perforator-awl;notch",
+      `Typology` == "scraperburin?" ~ "tool/burin;scraper",
+      `Typology` == "notchround scraper" ~ "tool/round scraper;notch",
+      `Typology` == "corerejuvention tablet round scraper" ~ "tool/round scraper on core tablet",
+      `Typology` == "alternatescraper" ~ "tool/double side scraper",
+      `Typology` == "coreplatform preperation flake" ~ "core/rejuvenation piece",
+      `Typology` == "coreplatform rejuvention tablet" ~ "core/core tablet",
+      `Typology` == "brokenpyramidal core bladelet" ~ "core/pyramid",
+      `Typology` == "pyramidalbladelet core/semi bullet?" ~ "core/bullet",
+      `Typology` == "coreside rejuvention flake?" ~ "core/rejuvenation piece-side",
+      `Typology` == "unidirectionalpressure bladelet core/unifacila" ~ "core/pyramid",
+      `Typology` == "coreplatform rejuvention tablet/or multidirectional core" ~ "core/rejuvenation piece",
+      `Typology` == "bulletbladlet core" ~ "core/bullet",
+      `Typology` == "cylinderbipolar bladelet core" ~ "core/prismatic",
+      `Typology` == "backedknife/core platform rejuvenation" ~ "tool/backed knife",
+      `Typology` == "flatunifacial bladelet core" ~ "core/flat",
+      `Typology` == "coreprepration flake" ~ "core/core preparation piece",
+      `Typology` == "coreplatform preperation" ~ "core/core preparation piece-platform",
+      `Typology` == "borerpreform" ~ "tool/perforator-borer",
+      `Typology` == "rejuvention" ~ "core/rejuvenation piece",
+      `Typology` == "borerpreform?" ~ "tool/perforator-borer",
+      `Typology` == "inversnotch" ~ "tool/notch",
+      `Typology` == "alternateconvergent" ~ "tool/convergent scraper",
+      `Typology` == "unidirectionalbladelet/flake-blade core" ~ "core/mixed",
+      `Typology` == "unidirectionalmixed core" ~ "core/mixed",
+      `Typology` == "unidirectionalflat bladelet core" ~ "core/flat",
+      `Typology` == "" ~ "NA-NA",
+      `Typology` == "na" ~ "NA-NA",
+      TRUE ~ `Typology`
+    )
+  )  %>%
+  mutate(
+    typology_split = str_split(Typology, "/", simplify = TRUE),
+    `typology-tool-core` = typology_split[, 1],
+    tool_or_core = ifelse(str_starts(`typology-tool-core`, "tool"), "tool", "core"),
+    `tool-typology` = ifelse(tool_or_core == "tool", typology_split[, 2], NA),
+    `core-fragment` = ifelse(tool_or_core == "core", typology_split[, 2], NA)
+  ) %>%
+  # remove temporary columns
+  select(-typology_split,-tool_or_core)
+
+
+# BM: still some typos in there
+rev(sort(table((tl4$`tool-typology`))))
+rev(sort(table((tl4$`core-fragment`))))
+```
+
+```{r}
+# Exploring data
+
+tl4 %>% 
+  # BM: we need this because of the mutate_all ifelse combo you have above
+  mutate(midpoint = parse_number(midpoint)) %>% 
+  group_by(midpoint) %>% 
+  tally() %>% 
+  drop_na(midpoint) %>% 
+ggplot() + 
+  aes(midpoint, n) +
+  geom_col()
+
+```
+
+```{r}
+# convert all columns to character type (I DONT KNOW WHY I DID THIS!)
+# BM: my preference is not to see comments and code like this. Go ahead and delete it.
+tl4 <- tl4 %>%
+  mutate(across(everything(), as.character))
+
+# replace 'NA', 'na', or '0' with R's NA
+tl4 <- tl4 %>%
+  # BM: in my opinion this is nicer than mutate_all and ifelse
+  mutate(across(everything(), ~na_if(., "NA"))) %>%
+  mutate(across(everything(), ~na_if(., "na"))) %>%
+  mutate(across(everything(), ~na_if(., "0")))
+
+```
+
+```{r}
+
+# refine the table
+
+tl_final <- tl4 %>%
+  rename(
+    blank =                Blank2,
+   `sickle shine` =       shine2,
+    length =              `Length (mm)` ,
+    width =               `Width (mm)`,
+    thickness =           `Thickness (mm)`, 
+    typology =             Typology,
+    utilization =          Utilization,
+    retouch =              Retouch,
+    blank =                Blank2, 
+   `blank part` =         `Blank_part`,
+   `bulb thickness` =     `Bulb Thickness (mm)`, 
+   `platform thickness` = `Platform Thickness (mm)`, 
+   `platform length` =    `platform Length (mm)`, 
+    eraillure =            Eraillure , 
+    cortex =               `Cortex (%)`)  %>%
+  mutate(al = paste0(toupper(area), "_", layer)) %>%
+  relocate(al, .after = layer)   %>%
+  select(lithic_id, 
+         TA, 
+         area, 
+         layer,
+         al,
+         cortex,
+         depth, upper, lower, midpoint, 
+        `length`, `width`, `thickness`, 
+         typology, 
+         utilization, 
+        `sickle shine`,
+         retouch, 
+        `typology-tool-core`,
+        `tool-typology`,
+         blank, `blank part`, 
+        `core-typology`, `core-fragment`,`core-technology`, 
+        cortex)  %>% 
+# Update the 'typology-tool-core' column based on 'Retouch'
+  mutate(
+    `typology-tool-core` = case_when(
+      retouch == 1 ~ "tool",           
+      utilization == 1 ~ "tool",
+      `sickle shine` == 1 ~ "tool",
+      
+      TRUE ~ `typology-tool-core`      
+    )
+  ) %>% 
+  mutate(
+    `tool-typology` = case_when(
+      utilization == 1 ~ "utilized tool",
+      `sickle shine` == 1 ~ "sickle shine",
+      TRUE ~ `tool-typology`               
+    )
+  ) %>% 
+  mutate(
+    `tool-typology` = case_when(
+     # If Retouch is 1 and tool-typology is NA
+       retouch == 1 & is.na(`tool-typology`) ~ "retouched piece",
+       `sickle shine` == 1 & is.na(`tool-typology`) ~ "sickle shine",
+       
+      # For all other cases 
+      TRUE ~ `tool-typology`                                       
+    )
+  )
+
+# BM: take a look at tool typology
+rev(sort(table(tl_final$`tool-typology`)))
+
+```
+
+```{r}
+#set the value of utilization to NA only for the rows where `sickle shine` == 1. 
+#All other rows should remain unchanged
+
+#unsuccessful, should try again later
+
+
+
+```
+
+
+```{r}
+
+# Creating tooltypegroup
+
+tl_final <- tl_final %>%
+  mutate(
+    tooltypegroup = case_when(
+      `tool-typology` %in%
+        c(
+          "end scraper",
+          "side scraper",
+          "double side scraper",
+          "convergent scraper",
+          "round scraper",
+          "perforator-convergent scraper",
+          "perforator-borer; preform",
+          "scraper-on core piece",
+          "endscraper on truncated piece",
+          "round scraper",
+          "transverse scraper",
+          "core tool-used core fragment",
+          "round scraper on core tablet"
+        ) ~ "scraper",
+      `tool-typology` %in%
+        c(
+          "perforator-borer",
+          "perforator-drill",
+          "perforator-point",
+          "perforator-awl",
+          "perforator-point;notch",
+          "perforator-awl on core rejuvenation piece",
+          "perforator-awl;notch",
+          "perforator-borer;denticulate"
+        ) ~ "Perforator",
+      `tool-typology` %in%
+        c(
+          "backed knife",
+          "backed knife-naturally backed knife",
+          "backed;denticulate"
+        ) ~ "backed pieces",
+      `tool-typology` %in% c(
+        "double notch",
+        "denticulate",
+        " denticulate",
+        "notch-denticulate",
+        "notch"
+      ) ~ "denticulate-notch",
+      `tool-typology` %in% c(
+        "notch-side scraper",
+        "notch-end scraper",
+        "double notch scraper",
+        "round scraper;notch"
+      ) ~ "scraper-notch",
+      `tool-typology` %in% c("geometric-triangle", "geometric-lunate") ~ "geometric",
+      `tool-typology` == "serrated scraper" ~ "serrated scraper",
+      `tool-typology` %in% c(
+        "truncated piece",
+        "truncated piece-notch",
+        "truncated piece;notch",
+        "notch;truncated piece"
+      ) ~ "truncated pieces",
+      
+      # Represents NA group
+      `tool-typology` %in% c("core preparation piece", "used", "psedulevalois flake") ~ NA_character_,
+      `tool-typology` %in% c("burin", "flat burin", "burin;scraper", "burin-notch-scraper") ~ "burin",
+      `tool-typology` == "microburin" ~ "microburin",
+      `tool-typology` == "retouched piece" ~ "retouched piece",
+      `tool-typology` == "utilized tool" ~ "utilized tool",
+      `tool-typology` == "sickle shine" ~ "sickle shine",
+      
+      #classify any remaining values as NA
+      TRUE ~ NA_character_
+    )
+  )
+
+# Checking the unique values of tooltypegroup
+rev(sort(table(tl_final$tooltypegroup)))
+
+```
+
+```{r}
+tl_final <- tl_final %>%
+  mutate(`core-fragment` = if_else(!is.na(`core-typology`),
+                                   NA_character_,
+                                   `core-fragment`))  %>%
+  mutate(`core-fragment` = if_else(!is.na(`core-typology`),
+                                   NA_character_,
+                                   `core-fragment`)) %>%
+  mutate(
+    `core-fragment` = case_when(
+      `core-fragment` == "rejuvenation piece" ~ "rejuvenation piece",
+      `core-fragment` == "rejuvention piece-side" ~ "rejuvenation piece",
+      `core-fragment` == "core preparation piece-platform" ~ "core tablet",
+      `core-fragment` == "core preparation" ~ "rejuvenation piece",
+      `core-fragment` == "core preparation piece" ~ "rejuvenation piece",
+      `core-fragment` == "core preperation" ~ "rejuvenation piece",
+      `core-fragment` == "pyramid" ~ "pyramid",
+      `core-fragment` == "pyramid core" ~ "pyramid",
+      `core-fragment` == "pyramid-unidirectional" ~ "pyramid",
+      `core-fragment` == "core fragment-pyramid" ~ "pyramid",
+      `core-fragment` == "cylinder" ~ "cylinder/prismatic",
+      `core-fragment` == "prismatic" ~ "cylinder/prismatic",
+      `core-fragment` == "shapeless" ~ "cylinder/prismatic",
+      `core-fragment` == "multidirectional core fragment" ~ "shapeless",
+      `core-fragment` == "multidirectional flake core" ~ "shapeless",
+      `core-fragment` == "multidirectional bladelet core" ~ "shapeless",
+      `core-fragment` == "mixed core" ~ "shapeless",
+      `core-fragment` == "mixed-percussion" ~ "shapeless",
+      `core-fragment` == "mixed" ~ "shapeless",
+      `core-fragment` == ("bipolar-percussion") ~ "bipolar",
+      `core-fragment` == "flat" ~ "flat",
+      `core-fragment` == "core on flake" ~ "core on flake",
+      `core-fragment` == "bullet" ~ "bullet",
+      TRUE ~ `core-fragment`
+      
+    )
+  )  %>%
+  mutate(
+    core = case_when(
+      `core-fragment` %in% c(
+        "pyramid",
+        "pyramid core",
+        "pyramid-unidirectional",
+        "core fragment-pyramid",
+        "cylinder/prismatic",
+        "shapeless",
+        "multidirectional core fragment",
+        "multidirectional flake core",
+        "multidirectional bladelet core",
+        "mixed core",
+        "mixed-percussion",
+        "mixed",
+        "bipolar-percussion",
+        "flat",
+        "core on flake",
+        "bullet"
+      ) ~ `core-fragment`,
+      TRUE ~ NA_character_
+    ),
+    corefrag = case_when(
+      `core-fragment` %in% c(
+        "rejuvenation piece",
+        "rejuvention piece-side",
+        "core preparation piece-platform",
+        "core preparation",
+        "core preparation piece",
+        "core preperation",
+        "crested bladelet" ,
+        "primary flake" ,
+        "primary blade"
+      ) ~ `core-fragment`,
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  # Convert empty strings to NA in `core-fragment` column
+  mutate(`core-fragment` = if_else(`core-fragment` == "", NA_character_, `core-fragment`)) %>%
+  # Convert "pyramid-percussion" to "pyramid" in `core-fragment` column
+  mutate(
+    `core-fragment` =
+      if_else(
+        `core-fragment` == "pyramid-percussion",
+        "pyramid",
+        `core-fragment`
+      )
+  ) %>%
+  # Update existing `core` column with selected values from `core-fragment` column
+  mutate(core = if_else(
+    `core-fragment` %in%
+      c(
+        "pyramid",
+        "cylinder/prismatic",
+        "flat",
+        "bullet",
+        "core on flake",
+        "pyramid"
+      ),
+    `core-fragment`,
+    core
+  )) %>%
+  # Add 'core tablet' and 'core fragment' from `core-fragment` to `corefrag`
+  mutate(
+    corefrag = case_when(
+      `core-fragment` == "core tablet" ~ "core tablet",
+      `core-fragment` == "core fragment" ~ "core fragment",
+      TRUE ~ corefrag
+    )
+  ) %>%
+  # Transfer 'rejuvenation piece' and 'core fragment' from `core-typology` to `corefrag`
+  mutate(
+    corefrag = case_when(
+      `core-typology` == "rejuvenation piece" ~ "rejuvenation piece",
+      `core-typology` == "core fragment" ~ "core fragment",
+      TRUE ~ corefrag
+    )
+  ) %>%
+  # Remove 'rejuvenation piece' and 'core fragment' from `core-typology`
+  mutate(`core-typology` = if_else(
+    `core-typology` %in% c("rejuvenation piece", "core fragment"),
+    NA_character_,
+    `core-typology`
+  ))  %>% 
+# Update the 'blank' column based on conditions in the 'core-fragment' column
+  mutate(blank = if_else(
+    `core-fragment` %in% c(
+      "core fragment",
+      "core tablet",
+      "rejuvenation piece",
+      "pyramid",
+      "crested bladelet",
+      "shapeless",
+      "primary flake",
+      "flat",
+      "bullet",
+      "core on flake",
+      "cylinder/prismatic",
+      "primary blade",
+      "rejuvenation piece-side",
+      "core platform rejuvention"
+    ),
+    NA_character_,
+    blank
+  ))
+
+
+# take a look
+rev(sort(table(tl_final$core)))
+rev(sort(table(tl_final$corefrag)))
+rev(sort(table(tl_final$`core-fragment`)))
+rev(sort(table(tl_final$blank)))
+```
+
+
+Summary tables: 1. AREA
+
+```{r}
+# Create a summary table
+summary_table_area <- tl_final %>%
+  group_by(area) %>%
+  summarise(
+    `Cores (n)` = sum(!is.na(core) & core != ""),
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
+                                            corefrag != ""),
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+# BM: looks like this is area and layer, is that right? I see c1, d1, d2, d3, d4 etc.
+knitr::kable(summary_table_area)
+
+
+```
+
+```{r}
+library(kableExtra)
+
+kable(summary_table_area, 
+      caption = "Table: Summary by Area", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+2.LAYER
+
+```{r}
+# Create a summary table
+summary_table_layer <- tl_final %>%
+  group_by(layer) %>%  # Note that 'area' is replaced with 'layer'
+  summarise(
+    `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+```
+
+```{r}
+# Generate the table
+kable(summary_table_layer, 
+      caption = "Table: Summary by Layer", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+AREA-LAYER:
+
+```{r}
+# Create a summary table based on the 'al' column
+summary_table_al <- tl_final %>%
+  group_by(al) %>%  
+  summarise(
+    `Cores (n)` = sum(!is.na(core)),  
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+```
+
+```{r}
+# Generate the table
+
+kable(summary_table_al, 
+      caption = "Table: Summary by Al", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+DEPTH:
+
+```{r}
+# Create a summary table based on the 'depth' column
+summary_table_depth <- tl_final %>%
+  mutate(depth = gsub("cm", "", depth)) %>%
+  group_by(depth) %>%  
+  summarise(
+    `Cores (n)` = sum(!is.na(core)),  
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+```
+
+```{r}
+# Generate the table
+
+kable(summary_table_depth, 
+      caption = "Table: Summary by Depth", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+```{r}
+# Create a summary table based on the 'depth', 'area', and 'layer' columns
+summary_table_depth_area_layer <- tl_final %>%
+  group_by(depth, area, layer, upper, lower) %>%  
+  summarise(
+    `Cores (n)` = sum(!is.na(core)),  
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+# Generate the table
+library(kableExtra)
+
+kable(summary_table_depth_area_layer, 
+      caption = "Table: Summary by Depth, Area, and Layer", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+
+```
+
+Techno-Typo:
+
+
+```{r}
+
+# Prepare data for Summary table-area
+summary_table_area <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  group_by(area) %>%
+  summarise(
+    blade_count = sum(blank == "blade", na.rm = TRUE),
+    flake_count = sum(blank == "flake", na.rm = TRUE),
+    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
+    tool_count = sum(retouch == 1, na.rm = TRUE) + sum(utilization == 1, na.rm = TRUE),
+    core_count = sum(!is.na(`core-typology`), na.rm = TRUE),
+    core_rejuvenation_count = sum(!is.na(`corefrag`), na.rm = TRUE),
+    retouched_tool_count = sum(retouch == 1, na.rm = TRUE),
+    utilized_tool_count = sum(utilization == 1, na.rm = TRUE),
+    shine_tool_count = sum(`sickle shine` == 1, na.rm = TRUE),
+    total = n()
+  )
+
+
+summary_table_area <- summary_table_area %>%
+  add_row(
+    area = "Total",
+    blade_count =              sum(.$blade_count, na.rm = TRUE),
+    flake_count =              sum(.$flake_count, na.rm = TRUE),
+    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
+    tool_count =               sum(.$tool_count, na.rm = TRUE),
+    core_count =               sum(.$core_count, na.rm = TRUE),
+    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
+    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
+    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
+    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
+    total =                    sum(.$total, na.rm = TRUE)  # Explicitly setting the total
+  )
+
+# Adding a new row with total counts
+summary_table_area <- summary_table_area %>%
+  add_row(
+    area = "Total",
+    blade_count =              sum(.$blade_count, na.rm = TRUE),
+    flake_count =              sum(.$flake_count, na.rm = TRUE),
+    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
+    tool_count =               sum(.$tool_count, na.rm = TRUE),
+    core_count =               sum(.$core_count, na.rm = TRUE),
+    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
+    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
+    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
+    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
+    total =                    sum(.$total, na.rm = TRUE)  # Explicitly setting the total
+  )
+
+
+```
+
+```{r}
+# Prepare data for Summary table-al
+summary_table_al <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>% 
+  group_by(al) %>% 
+  summarise(
+    blade_count = sum(blank == "blade", na.rm = TRUE),
+    flake_count = sum(blank == "flake", na.rm = TRUE),
+    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
+    tool_count = sum(retouch == 1, na.rm = TRUE) + sum(utilization == 1, na.rm = TRUE),
+    core_count = sum(!is.na(`core-typology`), na.rm = TRUE),
+    core_rejuvenation_count = sum(!is.na(`corefrag`), na.rm = TRUE),
+    retouched_tool_count = sum(retouch == 1, na.rm = TRUE),
+    utilized_tool_count = sum(utilization == 1, na.rm = TRUE),
+    shine_tool_count = sum(`sickle shine` == 1, na.rm = TRUE),
+    total = n()
+  )
+
+# Adding a new row with total counts
+summary_table_al <- summary_table_al %>% 
+  add_row(
+    al = "Total",
+    blade_count =              sum(.$blade_count, na.rm = TRUE),
+    flake_count =              sum(.$flake_count, na.rm = TRUE),
+    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
+    tool_count =               sum(.$tool_count, na.rm = TRUE),
+    core_count =               sum(.$core_count, na.rm = TRUE),
+    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
+    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
+    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
+    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
+    total =                    sum(.$total, na.rm = TRUE)  # Explicitly setting the total
+  )
+
+
+```
+
+```{r}
+summary_table_al <- summary_table_al %>%
+  filter(!(al %in% c("D1_NA", "TP1_NA")))
+
+kable(
+  summary_table_al,
+  col.names = c(
+    "Area-Layer",
+    "Blade",
+    "Flake",
+    "Bladelet",
+    "Tools",
+    "Cores",
+    "Core Rejuvenations",
+    "Retouched Tools",
+    "Utilized Tools",
+    "Sickle Shine",
+    "Total"
+  ),
+  caption = "Table: Summary ",
+  align = 'c'
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    font_size = 12
+  ) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+```{r}
+#summary table-area
+
+# Rename columns
+summary_table_area <- summary_table_area %>%
+  rename(
+    "Area" = area,
+    "Blade" = blade_count,
+    "Flake" = flake_count,
+    "Bladelet" = bladelet_count,
+    "Retouched Tools" = retouched_tool_count,
+    "Tools" = tool_count,
+    "Utilized Tools" = utilized_tool_count,
+    "Sickle Shine" = shine_tool_count,
+    "Cores" = core_count,
+    "Core rejuvenations pieces" = core_rejuvenation_count,
+    "Total" = total
+  ) %>%
+  mutate(
+    Area = if_else(row_number() == n() & is.na(Area), "Total", Area)
+  ) %>%
+  mutate(
+    Area = recode(Area, "ta" = "TA", "d1" = "D1", "tp1" = "TP1", "Total" = "Total")
+  )
+
+kable(summary_table_area,
+      caption = "Table 1: Count of debitage type and tools in three different main areas.",
+      align = 'c') %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    font_size = 12
+  ) %>%
+  row_spec(0, font_size = 11)
+```
+
+```{r}
+# summary table-core and core rejuvenation
+```
+
+```{r}
+# summary table for tools: retouched-utelized-sickle
+
+```
+
+```{r}
+
+# Create a summary table
+summary_table_tool_area <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(!is.na(tooltypegroup), tooltypegroup != "") %>%  # Exclude rows where 'tooltypegroup' is NA or empty
+  group_by(area, tooltypegroup) %>%  # Group the data by area and tooltypegroup
+  tally() %>%  # Count the number of rows in each group
+  arrange(area, tooltypegroup) %>%  # Arrange by area and tooltypegroup
+  spread(key = area, value = n, fill = 0)  # Spread the 'area' column into multiple columns
+
+# Add a "Total" column that sums each row
+summary_table_tool_area <- summary_table_tool_area %>%
+  mutate(Total = rowSums(select(.,-tooltypegroup)))
+
+total_row <- summary_table_tool_area %>%
+  select(-tooltypegroup) %>%
+  summarise(across(everything(), \(x) sum(x, na.rm = TRUE))) %>%
+  mutate(tooltypegroup = "Total")
+
+summary_table_tool_area <-
+  bind_rows(summary_table_tool_area, total_row)
+
+
+```
+
+```{r}
+
+kable(
+  summary_table_tool_area,
+  col.names = c("Tools", "D1", "TA", "TP1", "Total"),
+  caption = "Table: Tool Typology in three different main areas.",
+  align = 'c'
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = F,
+    font_size = 12
+  ) %>%
+  column_spec(1, extra_css = "text-align:left;") %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
+```{r}
+# Create the summary table based on layer
+summary_table1_layer <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  group_by(layer) %>%
+  summarise(
+    numb_retouched = sum(retouch == 1, na.rm = TRUE),
+    numb_cores = sum(!is.na(`core-typology`), na.rm = TRUE),
+    total_lithics = n(),
+    percent_retouch = round((numb_retouched / total_lithics) * 100, 2)
+  )
+
+```
+
+
+```{r}
+
+# BM: looks like you need this data starting from around here in the document
+library(googlesheets4)
+
+google_sheet_url <- 
+  "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
+
+sum_depth_sheet <- read_sheet(google_sheet_url)
+
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(`depth (cm)` = unlist(`depth (cm)`),
+         level = unlist(level)) %>% 
+  mutate(area_layer_level = paste0(toupper(area), 
+                                   "_", 
+                                   layer, 
+                                   "_", 
+                                   level)) %>%
+  relocate(area_layer_level, 
+           .after = last_col()) %>%
+  mutate(
+    retouch_freq = round(retouch_tool / total_lithics, 2),
+    lithic_dens = round(total_lithics / volume, 2)
+  )
+
+# BM: from my perspective, what would be ideal here is to have the 
+# excavation area and volume calculations done here in R. I feel anxious about
+# the possibilities of typos when these values are calculated somewhere I can't 
+# see and pasted into the google sheet. I prefer for the workflow of calculations
+# to be as transparent and traceable as possible. From this point in the qmd I
+# think we can use the volume values from this google sheet. Another option is to 
+# export the google sheet as a CSV, and put that in the data folder in this project. 
+# Then we can use read_csv to import it. 
+
+```
+
+
+volume for each area:
+
+```{r}
+# Define the volumes for each area 
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375) # in m^3
+  # BM: My preference would be to show the calculation of these 
+  # values from the raw data, rather than type them in 
+  # here, where we can't see where they came from, we can't easily
+  # verify these values as they are currently 
+)
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Join artifact_counts with volumes by area
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
+
+# Compute lithic density for each area and round it to 2 decimal places
+lithic_density_df <- lithic_density_df %>%
+  mutate(lithic_density = round(n / volume, 2)) # number of artifacts / volume
+
+# Create the summary table
+summary_table2_area <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  summarise(
+    numb_retouched = sum(retouch == 1, na.rm = TRUE),
+    total_lithics = n(),
+    percent_retouch = round((numb_retouched / total_lithics) * 100, 2)
+  )
+
+# Merge the density data with the summary table
+summary_table2_area <- 
+  left_join(summary_table2_area, 
+            lithic_density_df[, c("area", "lithic_density")], 
+            by = "area") %>%
+  mutate(area = recode(area, 'ta' = 'TA', 
+                       'tp1' = 'TP1', 
+                       'd1' = 'D1'),
+         lithic_volumetric_density = lithic_density)
+
+# Remove the 'lithic_density' column
+summary_table2_area <- summary_table2_area %>% 
+  select(-lithic_density)
+
+# Print out the resulting data frame
+summary_table2_area
+
+```
+
+```{r}
+
+                      #########DO NOT RUN0
+# BM: My preference is to delete this, or move it to a file called 'scraps.R' if you think you might need it later.
+
+# Define the volumes for each area based on the given information
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375) # in m^3
+)
+
+tl_final_area <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1"))
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final_area %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Calculate retouch frequency with explicit NA check
+retouch_freq <- tl_final_area %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  summarise(retouchFreq = ifelse(all(is.na(retouch)), NA, mean(!is.na(retouch))), .groups = 'drop')
+
+# Compute lithic density for each area and round it to 2 decimal places
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area") %>%
+  mutate(lithic_density = round(n / volume, 2))
+
+# Create the summary table
+summary_table2_area <- tl_final_area %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  summarise(
+    numb_retouched = sum(retouch == 1, na.rm = TRUE),
+    total_lithics = n(),
+    percent_retouch = round((numb_retouched / total_lithics) * 100, 2)
+  ) 
+
+# Merge all the calculated data
+summary_table2_area <- left_join(summary_table2_area, lithic_density_df[, c("area", "lithic_density")], by = "area")
+summary_table2_area <- left_join(summary_table2_area, retouch_freq, by = "area")
+
+# Final modifications and print
+summary_table2_area <- summary_table2_area %>%
+  mutate(
+    area = recode(area, 'ta' = 'TA', 'tp1' = 'TP1', 'd1' = 'D1'),
+    lithic_volumetric_density = lithic_density
+  ) %>%
+  select(-lithic_density)  # Remove the unwanted column
+
+print(summary_table2_area)
+
+```
+
+```{r}
+# generate table 2 - area
+
+library(kableExtra)
+
+kable(summary_table2_area, 
+      caption = "Table 2. Lithic counts for each of the areas in Tula'i", 
+      align = 'c',
+      col.names = c("Area", 
+                    "Number of Retouched Lithics", 
+                    "Total Number of Lithics", 
+                    "Retouch frequency (%)", 
+                    "Lithic Volumetric Density(pcs/(m^3)")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11) %>%
+  column_spec(1, width = "1cm") %>% 
+  column_spec(2, width = "1cm") %>% 
+ 
+  column_spec(3, width = "1cm") %>% 
+  column_spec(4, width = "1cm") %>% 
+  column_spec(5, width = "1cm")
+
+
+```
+
+```{r}
+
+
+                                            ##### DO NOT RUN ######
+
+# BM: My preference is to delete this, or move it to a file called 'scraps.R' if you think you might need it later.
+
+
+# layer-Create the summary table
+summary_table2_layer <- tl_final_area %>%
+  filter(layer %in% c(c("a", "b", "c" , "d", "e"))) %>%  
+  group_by(layer) %>%
+  summarise(
+    numb_retouched = sum(retouch == 1, na.rm = TRUE),
+    numb_cores = sum(!is.na(`core-typology`), na.rm = TRUE),
+    total_lithics = n(),
+    percent_retouch = round((numb_retouched / total_lithics) * 100, 2)
+  )
+
+# Create a data frame for volumetric density values
+density_data_layer <- data.frame(
+  layer = c("a", "b", "c" , "d", "e"),
+  `lithic_volumetric_density` = round(c(1.575, 6.12, 2.115, 47, 13), 2)
+)
+
+
+summary_table2_layer <- merge(summary_table2_layer, density_data_layer, by = "layer")
+
+
+
+```
+
+BM: what does this line below mean?
+WABI_AL Ta-e → 13 m3 Ta-d → 45 m3 D1-c → 0.675 m3 Tp-c → 1.44 m3 D1-a → 1.575 m3
+
+
+```{r}
+# Create the data frame
+
+# BM: why are you creating this data frame like this? It's not good practice to store data in code. It's very hard to keep track of changes to the data if you write it among the lines of code. Better practice is to export the table as a CSV file, then import it again when you need it. 
+summary_table2_area <- tibble(
+  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
+  lithic_volumetric_density = c(51.43, 111.11, 45.13, 100.08, 212.50),
+  retouch_frequency = c(0.05, 0.09, 0.07, 0.07, 0.10)
+)
+
+# Create the ggplot
+WABI_AL <- ggplot(summary_table2_area,
+                  aes(x = lithic_volumetric_density,
+                      y = retouch_frequency)) +
+  # Add points
+  geom_point(color =
+               "black",
+             size = 2) +
+  # line with log scale
+  stat_smooth(
+    method = "lm",
+    formula = y ~ log(x),
+    se = TRUE,
+    aes(group = 1),
+    color = "blue",
+    size = 0.5
+  ) +
+  # Add text labels for each point
+  geom_text_repel(
+    aes(label = area),
+    size = 2.5
+  ) +
+  # Add regression equation, R-squared, and p-value
+  stat_poly_eq(
+    aes(label = paste(
+      stat(eq.label), 
+      stat(rr.label), 
+      stat(p.value.label), 
+      sep = "~~~"
+    )),
+    formula = y ~ log(x),
+    parse = TRUE,
+    size = 4
+  ) +
+  # Add titles and labels
+  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+       x = "Lithic Volumetric Density",
+       y = "Retouch Frequency") +
+  # BM: I think we need to have both axes on the log scale, not just one 
+  scale_x_log10() + 
+  scale_y_log10() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+
+WABI_AL
+
+```
+
+
+```{r}
+# WABI_LEVEL
+
+# BM: I am confused why we are getting the counts of artefacts 
+# and retouch pieces from the google sheet, after you wrote so many lines of
+# code above to prepare the data from the CSV file. Where did the lithic data
+# in the google sheet come from? My preference is to have 
+# only copy of the lithic data in one place, and then join it with 
+# other data using code. Currently it seems like we have the 
+# lithic data in both the google sheet and the CSV file here. I'm worried that 
+# will be confusing and be difficult to update and keep correct. I prefer that we 
+# omit the lithic data from the google sheet, then import the google sheet and 
+# join it to the lithic data from the CSV file. Then we can have a data frame
+# with the area/layer/level data and lithic data to work on for plotting.
+
+filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
+
+WABI_Level <- ggplot(filtered_data, 
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  geom_point(color = "black", size = 2) +
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              color = "blue", 
+              size = 0.5) +
+  geom_text(aes(label = area_layer_level), 
+            vjust = 1.5, 
+            hjust = 0.5, 
+            size = 2,
+            check_overlap = TRUE) +
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                 stat(rr.label), 
+                                 stat(p.value.label), 
+                                 sep = "~~~")),
+               formula = y ~ x, 
+               parse = TRUE, 
+               size = 2) +
+  # Add titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+WABI_Level
+
+```
+
+```{r}
+#  WABI-level-log scale
+
+filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
+
+WABI_Level <- ggplot(filtered_data,  
+            aes(x = lithic_dens,
+                y = retouch_freq)) +
+  geom_point(color = "black", size = 1.5) +
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              color = "blue", 
+              size = 0.5) +
+  # Add text labels 
+  geom_text(aes(label = area_layer_level), 
+            vjust = 1.5, 
+            hjust = 0.5, 
+            size = 2,
+            check_overlap = TRUE) +
+  #regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                  stat(rr.label), 
+                                  stat(p.value.label), 
+                                  sep = "~~~")),
+               formula = y ~ x, 
+               parse = TRUE, 
+               size = 2) +
+  # titles and labels
+  labs(
+    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+    x = "Lithic Volumetric Density",
+    y = "Retouch Frequency"
+  ) +
+  # Apply log scales
+  scale_x_log10() +
+  scale_y_log10() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  )
+
+
+WABI_Level
+```
+
+
+WABI_AREA
+
+```{r}
+# Create a tibble 
+# BM: why are these values written in here? They are they same as summary_table2_area generated by the code above. My preference is to avoid hard-coding values like this, I think it increases the chance of errors, so I'm uncomfortable with tables like this. 
+summary_table2_area <- tibble(
+  area = c("D1_a", "D1_c", "TA_d", "TA_e", "TP1_c"),
+  lithic_volumetric_density = c(51.2, 110.9, 45.1, 100.2, 88.3),
+  percent_retouch = c(4.9, 9.3, 15.3, 18.0, 9.8)
+)
+
+```
+
+```{r}
+# regression plot-area
+
+# Plotting
+p_area <- 
+  ggplot(summary_table2_area, 
+         aes(x = lithic_volumetric_density,
+             y = percent_retouch)) +
+  # Blue regression line with shaded area
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              aes(group = 1), 
+              color = "blue") +
+  # Points colored by area
+  geom_point(color = "black") + 
+  # Labels points with area names
+  geom_text(aes(label = area),
+            vjust = -1, 
+            hjust = -0.5) +  
+  # Regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), 
+                                 stat(rr.label), 
+                                 stat(p.value.label), 
+                                 sep = "~~~")),
+               formula = y ~ x,
+               parse = TRUE,
+               size = 3) +
+  
+  # Titles and labels
+  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+       x = "Lithic Volumetric Density",
+       y = "Retouch Frequency (%)")
+
+p_area
+
+
+```
+
+```{r}
+# Fit the linear model
+linear_model <- lm(percent_retouch ~ lithic_volumetric_density, data = summary_table2_area)
+
+# Display the summary of the model to get coefficients, R-squared, and p-value
+summary_linear_model <- summary(linear_model)
+
+# Extract the coefficients (intercept and slope)
+coefficients <- summary_linear_model$coefficients
+
+# Extract the R-squared value
+r_squared <- summary_linear_model$r.squared
+
+# Extract the p-value for the slope (lithic_volumetric_density)
+p_value_slope <- coefficients["lithic_volumetric_density", "Pr(>|t|)"]
+
+cat("Coefficients:\n")
+print(coefficients)
+
+cat("\nR-squared value:", r_squared)
+
+cat("\nP-value for slope:", p_value_slope)
+
+```
+
+```{r}
+# whole assemblage
+ 
+  # Summarize data by Area
+summary_table_tech <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  group_by(area) %>% 
+  summarise(
+   blade_count = sum(blank == "blade", na.rm = TRUE),
+    flake_count = sum(blank == "flake", na.rm = TRUE),
+    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
+    bullet_core_count = sum(`core-typology` == "bullet", na.rm = TRUE),
+    flat_core_count = sum(`core-typology` == "flat", na.rm = TRUE),
+    pyramid_core_count = sum(`core-typology` == "pyramid", na.rm = TRUE),
+    cylinder_core_count = sum(`core-typology` %in% c("prismatic", "cylinder"), na.rm = TRUE),
+    shapeless_core_count = sum(`core-typology` == "shapeless", na.rm = TRUE),
+    
+    core_fragment_count = sum(`corefrag` == "core fragment", na.rm = TRUE),
+    core_rejuvention_count = sum(`corefrag` == "rejuvenation piece", na.rm = TRUE),
+    core_tablet_count = sum(`corefrag` == "core tablet", na.rm = TRUE),
+    core_crested_count = sum(`corefrag` == "crested bladelet", na.rm = TRUE),
+    core_primarypiece_count = sum(`corefrag`  %in% c("primary flake", "primary blade"), na.rm = TRUE),
+  
+   total = n()
+  )
+```
+
+```{r}
+# plot_blank_type
+
+# Data filtering and plotting
+tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>% 
+  filter(blank %in% c('bladelet', 'blade', 'flake')) %>%
+  ggplot(aes(x = area, fill = blank)) +
+  geom_bar(position = "dodge") +
+  labs(
+    x = "Area",
+    y = "Number",
+    fill = "Blank Type"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+
+# WABI:
+ 
+# regression plot-layer
+
+# Plotting
+# BM: this summary_table2_layer object is made in a code block above that has 
+# comment "do not run". So I didn't run it, and now I'm confused about what to 
+# do here. 
+p <- ggplot(summary_table2_layer, 
+            aes(lithic_volumetric_density, 
+                percent_retouch)) +
+  
+ 
+  geom_smooth(method = "lm", 
+              se = TRUE, 
+              aes(group = 1), 
+              color = "blue") +
+  
+  # Points colored by layer
+  geom_point(color = "black") + 
+
+  # Labels points with layer names
+  geom_text(aes(label = layer),
+            vjust = -1, 
+            hjust = -0.5) +  
+  
+  # Regression equation, R-squared, and p-value
+  stat_poly_eq(aes(label = paste(stat(eq.label), stat(rr.label), stat(p.value.label), sep = "~~~")),
+               formula = y ~ x,
+               parse = TRUE,
+               size = 3) +
+  
+  # Titles and labels
+  labs(title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
+       x = "Lithic Volumetric Density",
+       y = "Retouch Frequency (%)")
+
+p
+```
+
+```{r}
+#barplot_layer
+
+tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
+  filter(!is.na(corefrag)) %>% 
+  select(layer, corefrag) %>%
+  ggplot() +
+  aes(x = corefrag) +
+  geom_bar() +  
+  labs(x = "Core and Core fragments", y = "Frequency") +
+  facet_wrap(~layer, ncol = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+#Core-barplot_area
+
+tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(!is.na(corefrag)) %>% # Exclude rows where corefrag is NA
+  select(area, corefrag) %>%
+  ggplot() +
+  aes(x = corefrag) +
+  geom_bar() +
+  labs(x = "Core and Core fragments",
+       y = "Frequency") +
+  facet_wrap(~area, ncol = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+
+filtered_data <- tl_final %>%
+  filter(!is.na(`tool-typology`) & `tool-typology` != "" & `tool-typology` != "NA")
+ggplot(data = filtered_data) + 
+  aes(y = `tool-typology`) + 
+  geom_bar() +
+  labs(x = "Frequency",
+       y = "Tool Type") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 20, hjust = 1, vjust = 0.5))
+        
+
+
+
+```
+
+```{r}
+
+filtered_data <- tl_final %>%
+  # BM: this line below gives me an error, so I can't run this chunk at all
+  filter(!is.na(``) & `` != "")
+
+# Create the plot using the filtered data
+ggplot(data = filtered_data) + 
+  aes(y = ``) + 
+  geom_bar() +
+  labs(y = "Tool Type",
+       x = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+PCA-LAYER
+
+```{r}
+# prepare the data for PCA-layer
+
+# Calculating Blank Frequency
+blank_freq <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
+  group_by(layer) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1")) %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(corefrag)) %>%
+  group_by(layer) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(tooltypegroup)) %>%
+  group_by(layer) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+# Combining all the calculated frequencies into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer")
+
+# Printing the final table
+final_table
+
+```
+
+```{r}
+# Blank Frequency
+blank_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
+  group_by(layer) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "e or d")) %>%
+  group_by(layer) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / n(), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "e or d"), !is.na(tooltypegroup)) %>%
+  group_by(layer) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+#------------------------------------------------------------------------------
+# BM: I wasn't able to run any code below this line
+# -----------------------------------------------------------------------------
+
+# Calculating Retouch Frequency
+retouch_freq <- tl_final %>%
+  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
+  group_by(layer) %>%
+  # BM: something missing in the line below so I get an error
+  # I can't run anything beyond this line
+  summarise(retFreq = sum( == "retouched piece", na.rm = TRUE) / n(), .groups = 'drop')
+
+# Combining all the calculated frequencies, including retouch frequency, into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer") %>%
+  inner_join(retouch_freq, by = "layer") 
+
+final_table
+
+```
+
+```{r}
+# Joining calculated frequencies
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "layer") %>%
+  inner_join(tool_div, by = "layer") %>%
+  inner_join(retouch_freq, by = "layer")
+
+# Converting layer to row names
+final_table_rownames <- final_table %>%
+  column_to_rownames(var = "layer")
+
+```
+
+```{r}
+# Compute the PCA
+library(FactoMineR)
+
+res_pca <-
+  PCA(final_table_rownames,
+      graph = FALSE)
+
+```
+
+```{r}
+library(factoextra)
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca,
+             axes = 1,   
+             choice = "var") 
+
+```
+
+```{r}
+library(factoextra)
+
+# contributions of variables to the second principal component
+fviz_contrib(res_pca,
+             axes = 2,   
+             choice = "var") 
+
+```
+
+```{r}
+library(factoextra)
+
+#  biplot
+fviz_pca_biplot(res_pca)
+```
+
+```{r}
+library(factoextra)
+fviz_screeplot(res_pca)
+```
+
+```{r}
+fviz_pca_var(res_pca)
+```
+
+```{r}
+
+library(FactoMineR)
+library(factoextra)
+
+# Run PCA
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca, axes = 1, choice = "var") 
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca, axes = 2, choice = "var")
+
+# Visualize eigenvalues and explained variance
+fviz_screeplot(res_pca)
+
+# Create a biplot of the PCA
+fviz_pca_biplot(res_pca)
+
+# Visualize the variables on the principal components
+fviz_pca_var(res_pca)
+
+
+```
+
+```{r}
+# Run PCA
+library(FactoMineR)
+library(factoextra)
+
+
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+# Get the coefficients of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+
+print(loadings_matrix)
+
+```
+
+```{r}
+#Table
+
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+
+# Variance percent
+variance_percent <- res_pca$eig[1:2, 2]
+
+# Cumulative variance percent
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+
+print(df)
+
+```
+
+```{r}
+#Table 
+
+library(gt)
+
+# Create data frame
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+rownames(df) <- c("Dim1", "Dim2")
+
+# Create the table using gt
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = vars(Eigenvalue, Variance_Percent, Cumulative_Variance_Percent),
+    decimals = 2
+  )
+
+
+```
+
+calculating PCA based on AREA: TA/ TP1/ D1:
+
+```{r}
+#4lithic density
+
+
+# A→ V=4×5×2.6 = 52 m3
+# TP → V=2×1.8×1.6 = 5.76 m 3
+# D1 → 1.5×1.5×0.95 = 2.1375 m3
+
+library(dplyr)
+
+# Define the volumes for each area based on the given information
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375) # in m^3
+)
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final_area %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Join artifact_counts with volumes by area
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
+
+# Compute lithic density for each area
+lithic_density_df <- lithic_density_df %>%
+  mutate(lithic_density = n / volume) # number of artifacts / volume
+
+# Print the resulting table
+print(lithic_density_df[, c("area", "lithic_density")])
+
+```
+
+```{r}
+
+#2 Calculate the frequency of cores and core fragments by area
+
+library(dplyr)
+# Calculate the core frequency
+core_frequency_by_area <- left_join(number_of_cores_by_area, 
+                                    total_lithics_by_area, 
+                                    by = "area") %>%
+  mutate(core_frequency = (number_of_cores / total_lithics) * 100)
+
+# Display the result
+print(core_frequency_by_area)
+
+```
+
+```{r}
+# 1number of Blank
+
+# Calculate the total number of lithic artifacts
+total_lithics <- tl_final_area %>%
+  summarise(total_lithics = n()) %>%
+  pull(total_lithics)
+
+# Display the total number of lithic artifacts
+print(paste("The total number of lithic artifacts is:", total_lithics))
+
+
+```
+
+```{r}
+# Calculate the retouched frequency for each area
+library(dplyr)
+
+
+total_lithics_by_area <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(total_lithics = n())
+
+number_of_retouched_by_area <- tl_final_area %>%
+  mutate(retouch = as.numeric(`retouch`)) %>% 
+  filter(!is.na(retouch), retouch == 1) %>%  
+  group_by(area) %>%  
+  summarise(number_of_retouched = sum(retouch))
+
+retouched_frequency_by_area <- left_join(number_of_retouched_by_area, total_lithics_by_area, by = "area") %>%
+  mutate(retouched_frequency = (number_of_retouched / total_lithics) * 100)
+
+# Display the retouched frequency by area
+print(retouched_frequency_by_area)
+
+
+
+
+print(number_of_retouched_by_area)
+
+```
+
+```{r}
+# 3Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), 
+         !is.na(tooltypegroup)) %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+```
+
+feature frequency: d1 1 ta 1 tp1 0)
+
+estimated volumes (area) A→ 52 m3 TP → 5.76 m 3 D1 → 2.1375 m3
+
+```{r}
+library(dplyr)
+library(FactoMineR)
+library(tibble)
+
+# Define estimated area and feature frequency data
+area_data <- tibble(
+  area = c("d1", "ta", "tp1"),
+  estimated_area = c(2.1375, 52, 5.76),
+  feature_freq = c(1, 1, 0)
+)
+
+
+
+# Step 1: Number of artifacts by area
+artifact_counts <- tl_final_area %>%
+  group_by(area) %>%
+  tally()
+
+# Step 2: Calculate each variable
+
+# Retouch Frequency 
+retouch_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(retouchFreq = mean(!is.na(retouch)), .groups = 'drop')
+
+# Blank Frequency
+blank_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(blankFreq = mean(!is.na(blank)), .groups = 'drop')
+
+# Core Frequency
+core_freq <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(coreFreq = mean(!is.na(`core-typology`)),.groups = 'drop')
+
+# Lithic density (Artifact counts / estimated area)
+lithic_density <- artifact_counts %>%
+  left_join(area_data, by = "area") %>%
+  mutate(lithic_density = n / estimated_area)
+
+# Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(n()), .groups = 'drop')
+
+# Step 3: Combining all variables 
+
+pca_final_table_area <- left_join(area_data, retouch_freq, by = "area") %>%
+  left_join(blank_freq, by = "area") %>%
+  left_join(core_freq, by = "area") %>%
+  left_join(lithic_density, by = "area") %>%
+  left_join(tool_div, by = "area") %>%
+  select(area, estimated_area, feature_freq, retouchFreq, blankFreq, coreFreq, lithic_density, toolDiv) 
+
+
+
+
+
+```
+
+```{r}
+pca_final_table_area <- pca_final_table_area %>%
+    select(
+        area, 
+        estimated_area = estimated_area.x, 
+        feature_freq = feature_freq.x, 
+        retouchFreq, 
+        blankFreq, 
+        coreFreq, 
+        n, 
+        lithic_density, 
+        toolDiv
+    )
+
+```
+
+```{r}
+# Step 4: Perform PCA
+res_pca_area <- PCA(pca_final_table_area %>% select(-area, -n), graph = FALSE)
+
+
+# Show the summary of PCA
+print(res_pca_area)
+
+
+print(res_pca_area$eig)
+print(res_pca_area$var$coord)
+```
+
+```{r}
+# TABLE: Eigenvalues and percentage of variance for each dimension of PCA 
+library(kableExtra)
+
+# Define the values manually (you would get these from your PCA results)
+# BM: I prefer not to write values in the code like this. I think
+# this is bad practice and leads to mistakes
+eigenvalues <- c(4.411234, 2.588766)
+prop_var_explained <- c(63.02, 36.98)
+cumulative_var_explained <- c(63.02, 100.00)
+
+# Create the data frame
+results_df <- data.frame(
+  Dimension = c("Dim. 1", "Dim. 2"),  # Only keep the dimensions you want to display
+  Eigenvalue = eigenvalues,
+  `Variance / percent` = prop_var_explained,
+  `Cumulative / variance percent` = cumulative_var_explained
+)
+
+# Generate the table
+kable(results_df,
+      caption = "Table 3. Eigenvalues and percentage of variance for each dimension of PCA",
+      align = 'c',
+      col.names = c("Dimension", "Eigenvalue", "Variance (%)", "Cumulative Variance (%)")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11)
+
+```
+
+```{r}
+#plotting Dim-1 and Dim-2
+library(FactoMineR)
+library(factoextra)
+
+
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca_area, axes = 1, choice = "var")
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca_area, axes = 2, choice = "var")
+
+
+```
+
+```{r}
+
+# having Dim1 and Dim2 plots next to each other
+
+library(gridExtra)
+
+# Create the first plot and assign it to p1
+p1 <- fviz_contrib(res_pca_area, axes = 1, choice = "var")
+
+# Create the second plot and assign it to p2
+p2 <- fviz_contrib(res_pca_area, axes = 2, choice = "var")
+
+# Use grid.arrange to place them next to each other
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+```{r}
+
+loadings <- res_pca_area$var$coord
+
+# 
+eigenvalues <- res_pca_area$eig
+
+#  Dim.1
+contrib_dim1 <- (loadings[,1]^2 / eigenvalues[1, 1]) * 100
+
+#  Dim.2
+contrib_dim2 <- (loadings[,2]^2 / eigenvalues[2, 1]) * 100
+
+
+contrib_df <- data.frame(
+  Variable = rownames(loadings),
+  Contrib_Dim1 = contrib_dim1,
+  Contrib_Dim2 = contrib_dim2
+)
+
+
+print(contrib_df)
+
+```
+
+```{r}
+# screeplot
+
+library(FactoMineR)
+library(factoextra)
+
+
+fviz_eig(res_pca_area)
+
+```
+
+```{r}
+# Correlation plots of variables for each of the tow relevant PCA dimensions
+
+fviz_pca_var(res_pca_area, 
+             
+             repel = TRUE) + 
+  theme(text = element_text(size = 10))
+
+
+
+```
+
+```{r}
+# Eigenvalues and percentage of variance
+eig.val <- res_pca_area$eig
+print(eig.val)
+
+# Variable coordinates (correlations with principal components)
+var.coord <- res_pca_area$var$coord
+print(var.coord)
+
+```
+
+```{r}
+#PCA biplot for Dimensions 1 and 2
+
+fviz_pca_biplot(res_pca_area, labelsize = 3, repel = TRUE)
+
+```
+
+```{r}
+# biplot 
+p <- fviz_pca_biplot(res_pca_area, label = "none", 
+                     repel = TRUE, labelsize = 4)
+
+
+p + geom_text(aes(x = res_pca_area$ind$coord[, 1], 
+                  y = res_pca_area$ind$coord[, 2], 
+                  label = pca_final_table_area$area), 
+             size = 3, nudge_x = 0.1, nudge_y = 0.1)
+
+
+```
+
+```{r}
+individual_coordinates = res_pca_area$ind$coord
+variable_coordinates = res_pca_area$var$coord
+
+```
+
+```{r}
+# For variables
+fviz_cos2(res_pca_area, choice = "var")
+
+# For individuals
+fviz_cos2(res_pca_area, choice = "ind")
+
+
+```
+
+DONE WITH PCA
+
+```{r}
+
+individual_coordinates <- res_pca_area$ind$coord
+
+
+individual_coordinates_df <- as.data.frame(individual_coordinates)
+individual_coordinates_df$area <- unique(area_data$area)
+
+
+print(individual_coordinates_df)
+
+```
+
+```{r}
+library(kableExtra)
+
+
+# Extract individual coordinates
+individual_coordinates <- res_pca_area$ind$coord
+
+# Convert to a data frame for better visibility and add the 'area' column back for context
+individual_coordinates_df <- as.data.frame(individual_coordinates)
+individual_coordinates_df$Area <- unique(area_data$area)  # Make sure the order matches
+
+# Use kable to create a beautiful table
+kable(individual_coordinates_df, 
+      col.names = c("Area", "Principal Component 1", "Principal Component 2"), 
+      caption = "PCA Coordinates for the Archaeological Areas excavation",
+      align = c('l', 'c', 'c'),
+      digits = 3) %>%
+  kable_styling("striped", full_width = F)
+
+```
+
+```{r}
+# Get the loadings (coefficients) of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+
+
+
+```
+
+```{r}
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+variance_percent <- res_pca$eig[1:2, 2]
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+# Print the table
+print(df)
+
+```
+
+```{r}
+library(gt)
+
+
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
+    decimals = 2
+  )
+
+
+```
+
+```{r}
+
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Print the resulting table
+print(artifact_counts)
+```
+
+```{r}
+
+
+blank_freq <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(blank)) %>%
+  group_by(area) %>%
+  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
+
+# Calculating Core Frequency
+core_freq <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(corefrag)) %>%
+  group_by(area) %>%
+  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
+
+# Calculating Tool Diversity using Menhinick's Index
+tool_div <- tl_final_area %>%
+  filter(area %in% c("ta", "d1", "tp1"), !is.na(tooltypegroup)) %>%
+  group_by(area) %>%
+  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
+
+# Combining all the calculated frequencies into one tibble
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "area") %>%
+  inner_join(tool_div, by = "area")
+
+# Printing the final table
+print(final_table)
+
+```
+
+```{r}
+# Joining calculated frequencies
+final_table <- blank_freq %>%
+  inner_join(core_freq, by = "area") %>%
+  inner_join(tool_div, by = "area") %>%
+  inner_join(retouch_freq, by = "area")
+
+# Converting area to row names
+final_table_rownames <- final_table %>%
+  column_to_rownames(var = "area")
+
+```
+
+```{r}
+
+library(FactoMineR)
+library(factoextra)
+
+# Run PCA
+res_pca <- PCA(final_table_rownames, graph = FALSE)
+
+
+
+# Visualize the contributions of variables to the second principal component
+fviz_contrib(res_pca, axes = 2, choice = "var")
+
+
+```
+
+```{r}
+# Visualize the contributions of variables to the first principal component
+fviz_contrib(res_pca, axes = 1, choice = "var") 
+```
+
+```{r}
+# Visualize eigenvalues and explained variance
+fviz_screeplot(res_pca)
+```
+
+```{r}
+fviz_pca_biplot(res_pca, labelsize = 3, repel = TRUE)
+
+
+```
+
+```{r}
+# Visualize the variables on the principal components
+fviz_pca_var(res_pca)
+```
+
+```{r}
+# Get the loadings (coefficients) of original variables for each principal component
+loadings_matrix <- res_pca$var$coord
+
+# Print the loadings matrix
+print(loadings_matrix)
+
+```
+
+```{r}
+# Eigenvalues
+eigenvalues <- res_pca$eig[1:2, 1]
+variance_percent <- res_pca$eig[1:2, 2]
+cumulative_variance_percent <- res_pca$eig[1:2, 3]
+
+# Create the table
+df <- data.frame(Eigenvalue = eigenvalues,
+                 Variance_Percent = variance_percent,
+                 Cumulative_Variance_Percent = cumulative_variance_percent)
+
+rownames(df) <- c("Dim1", "Dim2")
+
+# Print the table
+print(df)
+
+```
+
+```{r}
+library(gt)
+
+
+# Create the table 
+gt(df) %>%
+  tab_header(
+    title = "",
+    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
+  ) %>%
+  cols_label(
+    Eigenvalue = "Eigenvalue",
+    Variance_Percent = "Variance (%)",
+    Cumulative_Variance_Percent = "Cumulative Variance (%)"
+  ) %>%
+  fmt_number(
+    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
+    decimals = 2
+  )
+
+
+```
+
+```{r}
+# Count the number of artifacts by area
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Print the resulting table
+print(artifact_counts)
+
+```
+
+```{r}
+
+volumes <- data.frame(
+  area = c("ta", "tp1", "d1"),
+  volume = c(52, 5.76, 2.1375)
+)
+
+# Count the number of artifacts by area
+artifact_counts <- tl_final %>%
+  filter(area %in% c("ta", "tp1", "d1")) %>%
+  group_by(area) %>%
+  tally()
+
+# Join artifact_counts with volumes by area
+lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
+
+# Compute lithic density for each area
+lithic_density_df <- lithic_density_df %>%
+  mutate(lithic_density = n / volume)
+
+# Print the resulting table
+print(lithic_density_df[, c("area", "lithic_density")])
+
+```
+
+```{r}
+# Counting the number of cores by area
+core_counts <- tl_final %>%
+  filter(area %in% c("ta", "d1", "tp1") & !is.na(`core and core fragments`)) %>%
+  group_by(area) %>%
+  tally()
+
+print(core_counts)
+
+```
