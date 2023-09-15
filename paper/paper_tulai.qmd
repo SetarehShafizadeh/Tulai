@@ -524,6 +524,7 @@ tl4 <- tl4 %>%
     # BM: wow, seems like almost each artefact is its own type! 
     # BM: That is not ideal for statistical analysis
     # BM: This looks like it was very time-consuming to simplify. 
+    ##SS: this column was so messy with too many mistakes; I needed to have all typos correct then transfer them in their corresponding columns.  
     Typology = case_when(
       `Typology` == "notch, truncated" ~ "tool/notch;truncated piece",
       `Typology` == "retouchpiece" ~ "tool/retouched piece",
@@ -1064,6 +1065,13 @@ rev(sort(table((tl4$`tool-typology`))))
 rev(sort(table((tl4$`core-fragment`))))
 ```
 
+
+```{r}
+
+```
+
+
+
 ```{r}
 # Exploring data
 
@@ -1305,6 +1313,26 @@ rev(sort(table(tl_final$tooltypegroup)))
 
 ```
 
+```{r}
+
+library(dplyr)
+library(stringr)
+
+# Define the patterns to search for
+patterns <- c("denticulate-notch", "retouched piece", "scraper",
+              "Perforator", "serrated scraper", "backed pieces",
+              "truncated pieces", "burin", "geometric", "scraper-notch",
+              "microburin")
+
+# Update the `retouch` column based on the `tooltypegroup` column
+tl_final <- tl_final %>%
+  mutate(retouch = ifelse(str_detect(tooltypegroup, str_c(patterns, collapse = "|")), 1, retouch))
+
+# View the first few rows to confirm
+head(tl_final)
+rev(sort(table(tl_final$tooltypegroup)))
+rev(sort(table(tl_final$retouch)))
+```
 
 
 ```{r}
@@ -1719,8 +1747,6 @@ kable(
 ```
 
 
-
-
 ```{r}
 # Create a summary table for typology based on area
 
@@ -1779,6 +1805,7 @@ summary_table1_layer <- tl_final %>%
 
 ```
 
+
 ```{r}
 # Create a summary table based on the 'depth', 'area', and 'layer' columns
 tl_final <- tl_final %>%
@@ -1810,9 +1837,65 @@ kable(summary_table_depth_area_layer,
   row_spec(0, bold = TRUE, font_size = 14)
 ```
 
+```{r}
+# Generate a summary table by grouping by 'depth'
+summary_table_depth_tool_type <- tl_final %>%
+  group_by(depth) %>%
+  summarise(tool_type = n_distinct(tooltypegroup))
+
+# Create a full summary table by joining it back to your original summary table based on 'depth'
+summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+  left_join(summary_table_depth_tool_type, by = "depth")
+
+# Print column names 
+print(names(summary_table_depth_area_layer))
+
+
+
+# Generate the table
+library(kableExtra)
+
+kable(summary_table_depth_area_layer, 
+      caption = "Table: Summary by Depth, Area, and Layer", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+
+```
 
 
 ```{r}
+# Specify the exact columns want to keep
+desired_columns <- c("TA", "depth", "area", "layer", "upper", "lower", 
+                     "Cores (n)", "Core rejuvenations pieces (n)", 
+                     "Blade (n)", "Flake (n)", "Bladelet (n)", 
+                     "Retouched Tools (n)", "Utilized (n)", "Sickle Shine (n)",
+                     "tool_type")  # Only keep this 'tool_type'
+
+# Filter the tl_final dataframe
+summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+  filter(area %in% c('ta', 'd1', 'tp1'))
+
+# Generate the table
+library(kableExtra)
+
+kable(summary_table_depth_area_layer, 
+      caption = "Table: Summary by Depth, Area, and Layer", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+
+```
+
+
+```{r}
+
 #Here, I've imported the table 'Summary by Depth, Area, Layer' into Google Sheets for easier management.
 #I thought this format would simplify the process of those depths needed to be splitting up.
 
@@ -1824,9 +1907,30 @@ library(googlesheets4)
 google_sheet_url <- 
   "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
 
-sum_depth_sheet <- read_sheet(google_sheet_url)
+# Create the 'label' column
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(label = paste(area, layer, level, sep = "_"))
 
-  
+# Add a suffix only to duplicates
+sum_depth_sheet <- sum_depth_sheet %>%
+  group_by(label) %>%
+  mutate(suffix = case_when(
+    n() == 1 ~ NA_character_,
+    TRUE ~ letters[row_number()]
+  )) %>%
+  ungroup()
+
+# Append the suffix to 'label'
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(label = if_else(is.na(suffix), label, paste0(label, "_", suffix))) %>%
+  select(-suffix)
+
+# Relocate 'label' column after 'level'
+sum_depth_sheet <- sum_depth_sheet %>%
+  relocate(label, .after = level)
+
+
+
 
 # BM: from my perspective, what would be ideal here is to have the 
 # excavation area and volume calculations done here in R. I feel anxious about
@@ -1841,16 +1945,22 @@ sum_depth_sheet <- read_sheet(google_sheet_url)
 
 #SS: is that true?: (I have a weird number in row 5, cl Depth and couldn't find out what happened)
 
+
+
+
+
+#### previously I had a column'excavation area'; I seprated them in 2 columns in order to calculate the colume; but now when I wanted to run the code it said "! object 'excavation area' not found"; would it be OK to delete these lines? 
+
 # Separate `excavation area` into `length` and `width` and calculate `volume`
 sum_depth_sheet <- sum_depth_sheet %>%
   separate(`excavation area`, into = c("length", "width"), sep = "\\*") %>%
   mutate(
     length = as.numeric(length),
     width = as.numeric(width),
-    `thickness of deposit` = `thickness of deposit` / 100  # Convert from cm to m
+    `thickness` = `thickness` / 100  # Convert from cm to m
   ) %>%
   mutate(
-    volume = length * width * `thickness of deposit`  # Calculate volume in m^3
+    volume = length * width * `thickness`  # Calculate volume in m^3
   )
 
 
@@ -1866,21 +1976,14 @@ sum_depth_sheet <- sum_depth_sheet %>%
     retouch_freq = round(retouch_tool / volume, 2)  
   )
 
-
 ```
 
 
+
+
 ```{r}
-#WABI plot: here I do not consider those levels with a value 0 of retouch frequency. 
-
-
-library(ggpmisc)
-
-# Filter the data (get out those level with Retouch frequency=0)
-filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
-
-
 # Create the plot: WABI_Level_logscale
+# here I do not consider those levels with a value 0 of retouch frequency. 
 WABI_Level <- ggplot(filtered_data,  
             aes(x = lithic_dens,
                 y = retouch_freq)) +
@@ -1889,14 +1992,12 @@ WABI_Level <- ggplot(filtered_data,
               se = TRUE, 
               color = "blue", 
               linewidth = 0.5) +
-  # Add text labels 
-  geom_text(aes(label = paste(area, layer, level, sep = "_")), 
+  # Add text labels based on 'label' column
+  geom_text(aes(label = label), 
             vjust = 1.5, 
             hjust = 0.5, 
             check_overlap = TRUE) +
   
-  
-
   stat_poly_eq(aes(label = paste(stat(eq.label), 
                                   stat(rr.label), 
                                   stat(p.value.label), 
@@ -1923,16 +2024,16 @@ print(WABI_Level)
 ```
 
 
-
-
 ```{r}
 #PCA_Level: preparing data
 
-#PCA_level: for PCA Bicho and Cascalheira considered these variables: estimated area (as we calculated based on levels, should we not consider it?), core frequency, blank frequency, chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), retouch frequency, tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index); 
+#PCA_level: for PCA Bicho and Cascalheira considered these variables: estimated area (as we calculated based on levels, I consider the thickness; is that OK?), core frequency, blank frequency, chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), retouch frequency, tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index); 
 ##core frequency
 ##blank frequency
 ##retouch frequency
 ##tool diversity
+##thickness of deposit
+##lithic density
 
 
 
@@ -1948,11 +2049,192 @@ sum_depth_sheet <- sum_depth_sheet %>%
     blank_freq = round((flake + blade + bladelet) / volume, 2)  
   )
 
-# calculate Tool Diversity
-##calculating tool diversity is a bit tricky here; as I have some spitted depth, which we assign the number of artefacts based on the calculation of splitting, so how should I consider the tool diversity here?
+# Calculate tool diversity using Menhinick's index
+sum_depth_sheet <- sum_depth_sheet %>%
+  mutate(
+    total_tools = retouch_tool + utilized + sickle_shine,
+    tool_diversity = ifelse(total_tools > 0, n_distinct(tool_type) / sqrt(total_tools), NA)
+  )
+
 ```
 
-  
+```{r}
+pca_data <- sum_depth_sheet %>% 
+  select(thickness, lithic_dens, core_freq, blank_freq, retouch_freq, tool_diversity) %>%
+  na.omit()  # Remove rows with NA values
+
+```
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+# Assuming 'sum_depth_sheet' is your dataframe and you have added 'm_index' as your Menhinick index
+pca_data <- sum_depth_sheet[, c('thickness', 'lithic_dens', 'core_freq', 'blank_freq', 'retouch_freq', 'tool_diversity')]
+
+# Perform PCA
+res.pca <- PCA(pca_data, graph = FALSE)
+
+# View the summary results
+summary(res.pca)
+
+```
+
+
+
+```{r}
+#Plot: Contribution of variables for each of the four relevant PCA dimensions
+library(factoextra)
+library(ggplot2)
+
+#save contribution plots into one objects
+p1 <- fviz_contrib(res.pca, 
+                   choice = "var", 
+                   axes = 1, 
+                   top = 10)
+p2 <- fviz_contrib(res.pca, 
+                   choice = "var",
+                   axes = 2, 
+                   top = 10)
+p3 <- fviz_contrib(res.pca, 
+                   choice = "var", 
+                   axes = 3, 
+                   top = 10)
+p4 <- fviz_contrib(res.pca, 
+                   choice = "var", 
+                   axes = 4, 
+                   top = 10)
+
+#combine individual plots into one plot 
+library(gridExtra)
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+
+```
+
+
+
+```{r}
+# Extract contributions of variables to each principal component
+contributions <- res.pca$var$contrib
+
+# Compute average contribution for each dimension
+avg_contrib_dim1 <- mean(contributions[,1], na.rm = TRUE)
+avg_contrib_dim2 <- mean(contributions[,2], na.rm = TRUE)
+avg_contrib_dim3 <- mean(contributions[,3], na.rm = TRUE)
+avg_contrib_dim4 <- mean(contributions[,4], na.rm = TRUE)
+
+# Find variables that contribute more than average to each dimension
+high_contrib_dim1 <- contributions[contributions[,1] > avg_contrib_dim1, 1]
+high_contrib_dim2 <- contributions[contributions[,2] > avg_contrib_dim2, 2]
+high_contrib_dim3 <- contributions[contributions[,3] > avg_contrib_dim3, 3]
+high_contrib_dim4 <- contributions[contributions[,4] > avg_contrib_dim4, 4]
+
+# Sort them in descending order
+sorted_high_contrib_dim1 <- sort(high_contrib_dim1, decreasing = TRUE)
+sorted_high_contrib_dim2 <- sort(high_contrib_dim2, decreasing = TRUE)
+sorted_high_contrib_dim3 <- sort(high_contrib_dim3, decreasing = TRUE)
+sorted_high_contrib_dim4 <- sort(high_contrib_dim4, decreasing = TRUE)
+
+# Print or use for further analysis
+print("Significant contributions to Dim1:")
+print(sorted_high_contrib_dim1)
+
+print("Significant contributions to Dim2:")
+print(sorted_high_contrib_dim2)
+
+print("Significant contributions to Dim3:")
+print(sorted_high_contrib_dim3)
+
+print("Significant contributions to Dim4:")
+print(sorted_high_contrib_dim4)
+
+
+
+```
+
+
+```{r}
+# screeplot; inspect distribution of PCs
+library(factoextra)  
+fviz_screeplot(res.pca)
+```
+
+
+
+```{r}
+# Inspect eigenvalues
+print(res.pca$eig)
+
+```
+
+
+```{r}
+
+library(kableExtra)
+library(htmltools)
+
+# Create a new column named "Dimension" 
+eigen_df$Dimension <- paste("Dim", seq_len(nrow(eigen_df)), sep = "")
+
+
+eigen_df <- eigen_df[, c("Dimension", "eigenvalue", "percentage of variance", "cumulative percentage of variance")]
+
+# Round the numerical columns to 3 decimal places
+eigen_df[, 2:4] <- round(eigen_df[, 2:4], 3)
+
+# Removing row names
+rownames(eigen_df) <- NULL  
+
+# Creating the kable output
+kable_output <- kable(eigen_df, 
+                      "html", 
+                      align = 'c', 
+                      col.names = c("Dimension", 
+                                    "Eigenvalue", 
+                                    "Variance Percent", 
+                                    "Cumulative Variance Percent")) %>%
+  kable_styling("striped", 
+                full_width = F) %>%
+  add_header_above(c(" " = 1, "Eigenvalues and percentage of variance for each dimension of PCA" = 3))
+
+# Display the table
+htmltools::browsable(kable_output)
+
+
+
+```
+
+
+```{r}
+# Visualize biplot:1
+fviz_pca_biplot(res.pca,
+                axes = c(1, 2))
+rownames(res.pca$ind$coord) <- sum_depth_sheet$label
+# Visualize biplot with row names
+fviz_pca_biplot(res.pca)
+
+
+```
+
+```{r}
+# Visualize biplot: 2
+fviz_pca_biplot(res.pca,
+                axes = c(3, 4))
+rownames(res.pca$ind$coord) <- sum_depth_sheet$label
+# Visualize biplot with row names
+fviz_pca_biplot(res.pca)
+
+
+print(fviz_pca_biplot(res.pca, axes = c(3, 4)))
+
+```
+
+
+-----------------------------------------------
+DONE UPTO HERE
+-----------------------------------------------
+
+
 
 PCA_al:
 
