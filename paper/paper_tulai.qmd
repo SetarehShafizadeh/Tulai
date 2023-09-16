@@ -1067,12 +1067,6 @@ rev(sort(table((tl4$`core-fragment`))))
 
 
 ```{r}
-
-```
-
-
-
-```{r}
 # Exploring data
 
 tl4 %>% 
@@ -1181,10 +1175,17 @@ columns_to_convert <- c("cortex",
 # Convert each column to numeric
 for (col_name in columns_to_convert) {
   # Replace non-numeric characters with NA
+  # BM: this is quite an unusual method for doing this, 
+  # where did you find it?
   tl_final[[col_name]][tl_final[[col_name]] %in% c("", "NA", "N/A")] <- NA
   # Convert to numeric
   tl_final[[col_name]] <- as.numeric(tl_final[[col_name]])
 }
+
+# BM: this is how I would convert those columns to numeric, 
+# I think it's easier to read and requires less typing
+# tl_final %>% 
+#  mutate(across(all_of(columns_to_convert), parse_number))
 
 # check the structure to see if they have been converted
 str(tl_final)
@@ -1326,7 +1327,9 @@ patterns <- c("denticulate-notch", "retouched piece", "scraper",
 
 # Update the `retouch` column based on the `tooltypegroup` column
 tl_final <- tl_final %>%
-  mutate(retouch = ifelse(str_detect(tooltypegroup, str_c(patterns, collapse = "|")), 1, retouch))
+  mutate(retouch = ifelse(str_detect(tooltypegroup, 
+                                     str_c(patterns, collapse = "|")), 
+                          1, retouch))
 
 # View the first few rows to confirm
 head(tl_final)
@@ -1841,11 +1844,13 @@ kable(summary_table_depth_area_layer,
 # Generate a summary table by grouping by 'depth'
 summary_table_depth_tool_type <- tl_final %>%
   group_by(depth) %>%
-  summarise(tool_type = n_distinct(tooltypegroup))
+  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE))
 
 # Create a full summary table by joining it back to your original summary table based on 'depth'
-summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
-  left_join(summary_table_depth_tool_type, by = "depth")
+summary_table_depth_area_layer <- 
+  summary_table_depth_area_layer %>%
+  left_join(summary_table_depth_tool_type, 
+            by = "depth")
 
 # Print column names 
 print(names(summary_table_depth_area_layer))
