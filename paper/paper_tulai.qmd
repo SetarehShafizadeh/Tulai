@@ -2072,6 +2072,7 @@ sum_depth_sheet <- sum_depth_sheet %>%
 ```
 
 ```{r}
+
 pca_data <- sum_depth_sheet %>% 
   select(thickness, lithic_dens, core_freq, blank_freq, retouch_freq, tool_diversity) %>%
   na.omit()  # Remove rows with NA values
@@ -2079,9 +2080,11 @@ pca_data <- sum_depth_sheet %>%
 ```
 
 ```{r}
+# performin PCA
+
 library(FactoMineR)
 library(factoextra)
-# Assuming 'sum_depth_sheet' is your dataframe and you have added 'm_index' as your Menhinick index
+
 pca_data <- sum_depth_sheet[, c('thickness', 'lithic_dens', 'core_freq', 'blank_freq', 'retouch_freq', 'tool_diversity')]
 
 # Perform PCA
@@ -2091,7 +2094,6 @@ res.pca <- PCA(pca_data, graph = FALSE)
 summary(res.pca)
 
 ```
-
 
 
 ```{r}
