@@ -1,4 +1,59 @@
 
+#---------------------------------------------------------------
+# BM: diagnosing an incorrect tool_type value at around line 1840
+# BM: this is what I saw in the qmd file around line 1844:
+
+# Generate a summary table by grouping by 'depth'
+summary_table_depth_tool_type <- tl_final %>%
+  group_by(depth) %>%
+  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE))
+
+# Create a full summary table by joining it back to your original summary table based on 'depth'
+summary_table_depth_area_layer <-
+  summary_table_depth_area_layer %>%
+  left_join(summary_table_depth_tool_type,
+            by = "depth")
+
+# Print column names
+print(names(summary_table_depth_area_layer))
+
+# BM: I'm wondering about the group_by(depth), seems like it will
+# combine depths from multiple areas, is that right? My guess
+# is that we want to group_by(area, depth) so we don't combine
+# areas. I'll let you consider that question, I'm not 100% sure
+# what your goal is here
+
+# BM: here's how I found out why you get 2 intead of the expected
+# value of 1 for tool_type. I saw that the suprise value of 2
+# had a depth of 20-30, so I focus on those rows, since you
+# group by depth:
+
+tl_final %>%
+  filter(depth == "20-30")
+
+# BM: we see five rows, let's focus further on the tooltypegroup
+# column, since you compute n_distinct on that to get the 2
+
+tl_final %>%
+  filter(depth == "20-30") %>%
+  mutate(n_dist_tooltype = n_distinct(tooltypegroup, na.rm = TRUE)) %>%
+  select(n_dist_tooltype)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #########DO NOT RUN0
 # BM: My preference is to delete this, or move it to a file called 'scraps.R' if you think you might need it later.
 
