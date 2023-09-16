@@ -1838,17 +1838,16 @@ kable(summary_table_depth_area_layer,
 ```
 
 ```{r}
-# Generate a summary table by grouping by 'depth'
+# Generate a summary table by grouping by 'depth' and 'area'
 summary_table_depth_tool_type <- tl_final %>%
-  group_by(depth) %>%
-  summarise(tool_type = n_distinct(tooltypegroup))
+  group_by(area, depth) %>%
+  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE))
 
-# Create a full summary table by joining it back to your original summary table based on 'depth'
+# Create a full summary table by joining it back to original summary table based on 'depth' and 'area'
 summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
-  left_join(summary_table_depth_tool_type, by = "depth")
+  left_join(summary_table_depth_tool_type, by = c("area", "depth"))
 
-# Print column names 
-print(names(summary_table_depth_area_layer))
+
 
 
 
