@@ -1843,27 +1843,24 @@ kable(summary_table_depth_area_layer,
 ```{r}
 # Generate a summary table by grouping by 'depth' and 'area'
 summary_table_depth_tool_type <- tl_final %>%
-<<<<<<< HEAD
   group_by(area, depth) %>%
-  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE))
+  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE), .groups = 'drop')
 
-# Create a full summary table by joining it back to original summary table based on 'depth' and 'area'
+# Create a full summary table by joining it back to the original summary table based on 'depth' and 'area'
 summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
   left_join(summary_table_depth_tool_type, by = c("area", "depth"))
 
-=======
-  group_by(depth) %>%
-  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE))
+# Remove the existing 'tool_type' if it exists
+if ("tool_type" %in% names(summary_table_depth_area_layer)) {
+  summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+    select(-tool_type)
+}
 
-# Create a full summary table by joining it back to your original summary table based on 'depth'
+# Join again based on 'depth', this time being specific about what we want
 summary_table_depth_area_layer <- 
   summary_table_depth_area_layer %>%
-  left_join(summary_table_depth_tool_type, 
+  left_join(summary_table_depth_tool_type %>% select(depth, tool_type), 
             by = "depth")
->>>>>>> ef80eb46f5142bf93c08aaa7888f55b73f3a7d31
-
-
-
 
 # Generate the table
 library(kableExtra)
@@ -1878,6 +1875,8 @@ kable(summary_table_depth_area_layer,
 
 
 ```
+
+
 
 
 ```{r}
@@ -1919,6 +1918,9 @@ library(googlesheets4)
 
 google_sheet_url <- 
   "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
+sum_depth_sheet <- read_sheet(google_sheet_url)
+
+
 
 # Create the 'label' column
 sum_depth_sheet <- sum_depth_sheet %>%
@@ -1997,6 +1999,12 @@ sum_depth_sheet <- sum_depth_sheet %>%
 ```{r}
 # Create the plot: WABI_Level_logscale
 # here I do not consider those levels with a value 0 of retouch frequency. 
+filtered_data <- sum_depth_sheet %>% 
+  filter(lithic_dens > 0 & retouch_freq > 0)
+
+
+
+
 WABI_Level <- ggplot(filtered_data,  
             aes(x = lithic_dens,
                 y = retouch_freq)) +
@@ -2017,7 +2025,7 @@ WABI_Level <- ggplot(filtered_data,
                                   sep = "~~~")),
                formula = y ~ x, 
                parse = TRUE, 
-               size = 2) +
+               size = 4) +
   labs(
     title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
     x = "Lithic Volumetric Density",
@@ -2026,7 +2034,7 @@ WABI_Level <- ggplot(filtered_data,
   scale_x_log10() +
   scale_y_log10() +
   theme(
-    axis.text = element_text(size = 8),
+    axis.text = element_text(size = 7),
     axis.title = element_text(size = 10),
     plot.title = element_text(size = 12)
   )
@@ -2045,7 +2053,7 @@ print(WABI_Level)
 ##blank frequency
 ##retouch frequency
 ##tool diversity
-##thickness of deposit
+##thickness of deposit (???)
 ##lithic density
 
 
@@ -2074,7 +2082,7 @@ sum_depth_sheet <- sum_depth_sheet %>%
 ```{r}
 
 pca_data <- sum_depth_sheet %>% 
-  select(thickness, lithic_dens, core_freq, blank_freq, retouch_freq, tool_diversity) %>%
+  select(lithic_dens, core_freq, blank_freq, retouch_freq, tool_diversity) %>%
   na.omit()  # Remove rows with NA values
 
 ```
@@ -2085,7 +2093,7 @@ pca_data <- sum_depth_sheet %>%
 library(FactoMineR)
 library(factoextra)
 
-pca_data <- sum_depth_sheet[, c('thickness', 'lithic_dens', 'core_freq', 'blank_freq', 'retouch_freq', 'tool_diversity')]
+pca_data <- sum_depth_sheet[, c('lithic_dens', 'core_freq', 'blank_freq', 'retouch_freq', 'tool_diversity')]
 
 # Perform PCA
 res.pca <- PCA(pca_data, graph = FALSE)
@@ -2184,15 +2192,26 @@ print(res.pca$eig)
 
 
 ```{r}
+eigen_df <- data.frame(
+  eigenvalue = res.pca$eig[,1],
+  `percentage of variance` = res.pca$eig[,2],
+  `cumulative percentage of variance` = res.pca$eig[,3]
+)
+
+```
+
+
+
+```{r}
 
 library(kableExtra)
 library(htmltools)
 
-# Create a new column named "Dimension" 
+# Create a new column named "Dimension"
 eigen_df$Dimension <- paste("Dim", seq_len(nrow(eigen_df)), sep = "")
 
-
-eigen_df <- eigen_df[, c("Dimension", "eigenvalue", "percentage of variance", "cumulative percentage of variance")]
+# Re-order the columns based on the corrected names
+eigen_df <- eigen_df[, c("Dimension", "eigenvalue", "percentage.of.variance", "cumulative.percentage.of.variance")]
 
 # Round the numerical columns to 3 decimal places
 eigen_df[, 2:4] <- round(eigen_df[, 2:4], 3)
@@ -2217,341 +2236,18 @@ htmltools::browsable(kable_output)
 
 
 
+
 ```
+
 
 
 ```{r}
 # Visualize biplot:1
 fviz_pca_biplot(res.pca,
-                axes = c(1, 2))
+                axes = c(1, 2),
+                labelsize = 2
+                )
 rownames(res.pca$ind$coord) <- sum_depth_sheet$label
-# Visualize biplot with row names
-fviz_pca_biplot(res.pca)
-
-
-```
-
-```{r}
-# Visualize biplot: 2
-fviz_pca_biplot(res.pca,
-                axes = c(3, 4))
-rownames(res.pca$ind$coord) <- sum_depth_sheet$label
-# Visualize biplot with row names
-fviz_pca_biplot(res.pca)
-
-
-print(fviz_pca_biplot(res.pca, axes = c(3, 4)))
-
-```
-
-
------------------------------------------------
-DONE UPTO HERE
------------------------------------------------
-
-
-
-PCA_al:
-
-```{r}
-#PCA: area_layer (al)
-#I think as we are going to calculate PCA to understand other factors that might be affected the duration of the occupation, it would be logical to calculate it for each layer, instead of level. we have 5 stratigraphical layers: e, d, c, b, a
-#d1:1.5*1.5/ ta: 4*5/ tp1:2*1.8
-#e: excavated area is A/ depth of excavation is 0-75(mean)
-#d: excavated area is A/ 0.75m-3m→ 2.25
-#c: d1 and TP → 30 cm and 40cm
-#b: TP/ 170 cm 
-#a: D1: 70cm
-
-# Add 'dimension' columns and relocate it after 'al' (based on Hole (1974))
-library(dplyr)
-
-
-summary_table_al_pca <- summary_table_al %>%
-  mutate(
-    length = case_when(
-      al == "D1_a" ~ 1.5,
-      al == "D1_c" ~ 1.5,
-      al == "TA_d" ~ 4,
-      al == "TP1_c" ~ 2,
-      al == "TA_e" ~ 4,
-      TRUE ~ NA_real_
-    ),
-    width = case_when(
-      al == "D1_a" ~ 1.5,
-      al == "D1_c" ~ 1.5,
-      al == "TA_d" ~ 5,
-      al == "TP1_c" ~ 1.8,
-       al == "TA_e" ~ 5,
-      TRUE ~ NA_real_
-    ),
-    thickness = case_when(
-      al == "D1_a" ~ 0.7,
-      al == "D1_c" ~ 0.3,
-      al == "TA_d" ~ 2.25,
-      al == "TP1_c" ~ 0.4,
-      al == "TA_e" ~ 0.75,
-      TRUE ~ NA_real_)
-  ) %>%
- 
-  mutate(volume = length * width * thickness) %>%
-  relocate(length, width, thickness, volume, .after = al)
-# Show the updated data frame
-summary_table_al_pca
-
-
-
-```
-
-
-
-```{r}
-# Load required library
-library(dplyr)
-
-# Add a new column called 'blank_count'
-summary_table_al_pca <- summary_table_al_pca %>%
-  mutate(blank_count = blade_count + flake_count + bladelet_count) %>%
-  select(al, length, width, thickness, volume, blade_count, flake_count, bladelet_count, blank_count, everything())
-
-# Calculate core frequency, blank frequency, retouch frequency, lithic density 
-summary_table_al_pca <- summary_table_al_pca %>%
-  mutate(
-    lithic_density = round((core_count + blank_count + core_rejuvenation_count) / volume, 2),
-    core_freq = round(core_count / volume, 2),
-    blank_freq = round(blank_count / volume, 2),
-    retouch_freq = round(retouched_tool_count / volume, 2)
-  )
-
-# Calculate tool diversity using Menhinick's index
-summary_table_al_with_diversity <- tl_final %>% 
-  filter(retouch == 1) %>%
-  group_by(al, `tool-typology`) %>%  
-  summarise(n = n(), .groups = 'drop') %>% 
-  group_by(al) %>%  
-  summarise(
-    num_unique_tool_types = n_distinct(`tool-typology`),
-    total_retouched_tools = sum(n),
-    tool_diversity = round(num_unique_tool_types / sqrt(total_retouched_tools), 2),
-    .groups = 'drop'
-  )
-
-# Merge this new information into the existing summary_table_al_pca
-summary_table_al_pca <- left_join(summary_table_al_pca, summary_table_al_with_diversity, by = "al")
-
-
-# Remove the 'Total' row and select only the columns needed for PCA
-fin_summary_table_al_pca <- summary_table_al_pca %>%
-  filter(al != "Total") %>%
-  select(al, core_freq, blank_freq, lithic_density, retouch_freq, tool_diversity)
-
-# Show the final table
-print(fin_summary_table_al_pca)
-
-
-
-
-```
-
-
-```{r}
-library(FactoMineR)
-# Perform PCA
-res.pca <- PCA(fin_summary_table_al_pca[, -1], graph = FALSE)  # Exclude the 'al' column
-
-
-```
-
-
-```{r}
-## Got error: couldnt figure out the reason of error
-
-# Create a data frame to hold the rounded eigenvalues and the rounded percentage variance
-eigen_df <- data.frame(
-  Dimension = paste("Dim", 1:nrow(eigenvalues), sep = "."),
-  Eigenvalue = round(eigenvalues[, 1], 3),
-  `Variance percent` = round(eigenvalues[, 2], 3),
-  `Cumulative variance percent` = round(cumsum(eigenvalues[, 2]), 3)
-)
-
-# Print the table
-print(eigen_df)
-
-```
-
-
-```{r}
-# variables to PC1
-fviz_contrib(res.pca,  
-             choice = "var",  
-             axes = 1,  
-             top = 10)
-```
-
-```{r}
-fviz_contrib(res.pca,  
-             choice = "var",  
-             axes = 2,  
-             top = 10)
-
-```
-
-
-```{r}
-fviz_contrib(res.pca,  
-             choice = "var",  
-             axes = 3,  
-             top = 10)
-```
-
-```{r}
-fviz_contrib(res.pca,  
-             choice = "var",  
-             axes = 4,  
-             top = 10)
-```
-
-
-
-```{r}
-#Plot: Contribution of variables for each of the four relevant PCA dimensions
-library(factoextra)
-library(ggplot2)
-
-#save contribution plots into one objects
-p1 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 1, 
-                   top = 10)
-p2 <- fviz_contrib(res.pca, 
-                   choice = "var",
-                   axes = 2, 
-                   top = 10)
-p3 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 3, 
-                   top = 10)
-p4 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 4, 
-                   top = 10)
-
-#combine individual plots into one plot 
-library(gridExtra)
-grid.arrange(p1, p2, p3, p4, ncol = 2)
-
-
-```
-
-
-
-```{r}
-# Extract contributions of variables to each principal component
-contributions <- res.pca$var$contrib
-
-# Compute average contribution for each dimension
-avg_contrib_dim1 <- mean(contributions[,1], na.rm = TRUE)
-avg_contrib_dim2 <- mean(contributions[,2], na.rm = TRUE)
-avg_contrib_dim3 <- mean(contributions[,3], na.rm = TRUE)
-avg_contrib_dim4 <- mean(contributions[,4], na.rm = TRUE)
-
-# Find variables that contribute more than average to each dimension
-high_contrib_dim1 <- contributions[contributions[,1] > avg_contrib_dim1, 1]
-high_contrib_dim2 <- contributions[contributions[,2] > avg_contrib_dim2, 2]
-high_contrib_dim3 <- contributions[contributions[,3] > avg_contrib_dim3, 3]
-high_contrib_dim4 <- contributions[contributions[,4] > avg_contrib_dim4, 4]
-
-# Sort them in descending order
-sorted_high_contrib_dim1 <- sort(high_contrib_dim1, decreasing = TRUE)
-sorted_high_contrib_dim2 <- sort(high_contrib_dim2, decreasing = TRUE)
-sorted_high_contrib_dim3 <- sort(high_contrib_dim3, decreasing = TRUE)
-sorted_high_contrib_dim4 <- sort(high_contrib_dim4, decreasing = TRUE)
-
-# Print or use for further analysis
-print("Significant contributions to Dim1:")
-print(sorted_high_contrib_dim1)
-
-print("Significant contributions to Dim2:")
-print(sorted_high_contrib_dim2)
-
-print("Significant contributions to Dim3:")
-print(sorted_high_contrib_dim3)
-
-print("Significant contributions to Dim4:")
-print(sorted_high_contrib_dim4)
-
-
-
-```
-
-
-
-```{r}
-# screeplot; inspect distribution of PCs
-library(factoextra)  
-fviz_screeplot(res.pca)
-```
-
-
-
-```{r}
-# Inspect eigenvalues
-print(res.pca$eig)
-
-```
-
-```{r}
-# Load the required package
-library(kableExtra)
-
-# Create a table with kable and kableExtra
-eigen_df %>%
-  kable("html") %>%
-  kable_styling("striped", full_width = F) %>%
-  column_spec(1, bold = T)
-```
-
-```{r}
-
-
-# Rounding the numerical columns to 3 decimal places
-eigen_df[, -1] <- round(eigen_df[, -1], 3)
-
-# Replacing 'comp' with 'Dim'
-eigen_df$Dimension <- gsub("comp", "Dim", eigen_df$Dimension)
-
-# Removing row names
-rownames(eigen_df) <- NULL  
-
-# Creating the kable output
-kable_output <- kable(eigen_df, 
-                      "html", 
-                      align = 'c', 
-                      col.names = c("Dimension", 
-                                    "Eigenvalue", 
-                                    "Variance percent", 
-                                    "Cumulative variance percent")) %>%
-  kable_styling("striped", 
-                full_width = F) %>%
-  add_header_above(c(" " = 1, "Eigenvalues and percentage of variance for each dimension of PCA" = 3))
-
-
-htmltools::browsable(kable_output)
-
-
-
-
-```
-
-
-```{r}
-# Visualize biplot:1
-fviz_pca_biplot(res.pca,
-                axes = c(1, 2))
-rownames(res.pca$ind$coord) <- fin_summary_table_al_pca$al
-# Visualize biplot with row names
-fviz_pca_biplot(res.pca)
-
 
 
 
@@ -2560,568 +2256,10 @@ fviz_pca_biplot(res.pca)
 ```{r}
 # Visualize biplot: 2
 fviz_pca_biplot(res.pca,
-                axes = c(3, 4))
-rownames(res.pca$ind$coord) <- fin_summary_table_al_pca$al
-# Visualize biplot with row names
-fviz_pca_biplot(res.pca)
-
-
-print(fviz_pca_biplot(res.pca, axes = c(3, 4)))
-
-```
-
-
-
-```{r}
-# BM: My preference would be to show the calculation of these 
-  # values from the raw data, rather than type them in 
-  # here, where we can't see where they came from, we can't easily
-  # verify these values as they are currently 
-##SS: fixed
-
-# Define the volumes for each area 
-
-# add the dimensions for each area
-dimensions <- data.frame(
-  area = c("ta", "tp1", "d1"),
-  length = c(4, 2, 1.5),
-  width = c(5, 1.8, 1.5),
-  thickness = c(3, 1.6, 0.95)
-)
-
-# Calculate volume for each area based on the dimensions
-dimensions <- dimensions %>%
-  mutate(volume = length * width * thickness)
-
-# Count the number of artifacts by area
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Join artifact_counts with dimensions (which now includes volume) by area
-lithic_density_df <- left_join(artifact_counts, dimensions, by = "area")
-
-# Compute lithic density for each area and round it to 2 decimal places
-lithic_density_df <- lithic_density_df %>%
-  mutate(lithic_density = round(n / volume, 2)) # number of artifacts / volume
-
-# Create the summary table
-summary_table2_area <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  summarise(
-    numb_retouched = sum(retouch == 1, na.rm = TRUE),
-    total_lithics = n(),
-    percent_retouch = round((numb_retouched / total_lithics), 2)
-  )
-
-# Merge the density data with the summary table
-summary_table2_area <- 
-  left_join(summary_table2_area, 
-            lithic_density_df[, c("area", "lithic_density")], 
-            by = "area") %>%
-  mutate(area = recode(area, 'ta' = 'TA', 
-                       'tp1' = 'TP1', 
-                       'd1' = 'D1'),
-         lithic_volumetric_density = lithic_density)
-
-# Remove the 'lithic_density' column
-summary_table2_area <- summary_table2_area %>% 
-  select(-lithic_density)
-
-# Print out the resulting data frame
-print(summary_table2_area)
-
-```
-
-
-```{r}
-# generate table 2 - area
-
-library(kableExtra)
-
-kable(summary_table2_area, 
-      caption = "Table 2. Lithic counts for each of the areas in Tula'i", 
-      align = 'c',
-      col.names = c("Area", 
-                    "Number of Retouched Lithics", 
-                    "Total Number of Lithics", 
-                    "Retouch frequency", 
-                    "Lithic Volumetric Density(pcs/(m^3)")) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11) %>%
-  column_spec(1, width = "1cm") %>% 
-  column_spec(2, width = "1cm") %>% 
- 
-  column_spec(3, width = "1cm") %>% 
-  column_spec(4, width = "1cm") %>% 
-  column_spec(5, width = "1cm")
-
-
-```
-
-
-
-
-
-
-
-------------------------------
-Done with the main plots
-------------------------------
-
-
-
-
-```{r}
-# WABI_LEVEL
-
-# BM: I am confused why we are getting the counts of artefacts 
-# and retouch pieces from the google sheet, after you wrote so many lines of
-# code above to prepare the data from the CSV file. Where did the lithic data
-# in the google sheet come from? My preference is to have 
-# only copy of the lithic data in one place, and then join it with 
-# other data using code. Currently it seems like we have the 
-# lithic data in both the google sheet and the CSV file here. I'm worried that 
-# will be confusing and be difficult to update and keep correct. I prefer that we 
-# omit the lithic data from the google sheet, then import the google sheet and 
-# join it to the lithic data from the CSV file. Then we can have a data frame
-# with the area/layer/level data and lithic data to work on for plotting.
-
-
-#SS: the googlesheet is the last thing I created. I created the summary table in R, and then for splitting up the depth (we have few depth range that was not possible to assign the layer to them, so, we splited them), I found it is easier to do so in Google sheet. 
-  
-  
-filtered_data <- sum_depth_sheet %>% filter(lithic_dens > 0 & retouch_freq > 0)
-
-WABI_Level <- ggplot(filtered_data, 
-            aes(x = lithic_dens,
-                y = retouch_freq)) +
-  geom_point(color = "black", size = 2) +
-  geom_smooth(method = "lm", 
-              se = TRUE, 
-              color = "blue", 
-              size = 0.5) +
-  geom_text(aes(label = area_layer_level), 
-            vjust = 1.5, 
-            hjust = 0.5, 
-            size = 2,
-            check_overlap = TRUE) +
-  stat_poly_eq(aes(label = paste(stat(eq.label), 
-                                 stat(rr.label), 
-                                 stat(p.value.label), 
-                                 sep = "~~~")),
-               formula = y ~ x, 
-               parse = TRUE, 
-               size = 2) +
-  # Add titles and labels
-  labs(
-    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
-    x = "Lithic Volumetric Density",
-    y = "Retouch Frequency"
-  ) +
-  
-  theme(
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 12)
-  )
-
-WABI_Level
-
-```
-
-
-
-```{r}
-# whole assemblage
- 
-  # Summarize data by Area
-summary_table_tech <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  group_by(area) %>% 
-  summarise(
-   blade_count = sum(blank == "blade", na.rm = TRUE),
-    flake_count = sum(blank == "flake", na.rm = TRUE),
-    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
-    bullet_core_count = sum(`core-typology` == "bullet", na.rm = TRUE),
-    flat_core_count = sum(`core-typology` == "flat", na.rm = TRUE),
-    pyramid_core_count = sum(`core-typology` == "pyramid", na.rm = TRUE),
-    cylinder_core_count = sum(`core-typology` %in% c("prismatic", "cylinder"), na.rm = TRUE),
-    shapeless_core_count = sum(`core-typology` == "shapeless", na.rm = TRUE),
-    
-    core_fragment_count = sum(`corefrag` == "core fragment", na.rm = TRUE),
-    core_rejuvention_count = sum(`corefrag` == "rejuvenation piece", na.rm = TRUE),
-    core_tablet_count = sum(`corefrag` == "core tablet", na.rm = TRUE),
-    core_crested_count = sum(`corefrag` == "crested bladelet", na.rm = TRUE),
-    core_primarypiece_count = sum(`corefrag`  %in% c("primary flake", "primary blade"), na.rm = TRUE),
-  
-   total = n()
-  )
-```
-
-```{r}
-# plot_blank_type
-
-# Data filtering and plotting
-tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>% 
-  filter(blank %in% c('bladelet', 'blade', 'flake')) %>%
-  ggplot(aes(x = area, fill = blank)) +
-  geom_bar(position = "dodge") +
-  labs(
-    x = "Area",
-    y = "Number",
-    fill = "Blank Type"
-  ) +
-  theme_minimal()
-
-```
-
-
-```{r}
-#barplot_layer
-
-tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
-  filter(!is.na(corefrag)) %>% 
-  select(layer, corefrag) %>%
-  ggplot() +
-  aes(x = corefrag) +
-  geom_bar() +  
-  labs(x = "Core and Core fragments", y = "Frequency") +
-  facet_wrap(~layer, ncol = 1) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-```{r}
-#Core-barplot_area
-
-tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  filter(!is.na(corefrag)) %>% # Exclude rows where corefrag is NA
-  select(area, corefrag) %>%
-  ggplot() +
-  aes(x = corefrag) +
-  geom_bar() +
-  labs(x = "Core and Core fragments",
-       y = "Frequency") +
-  facet_wrap(~area, ncol = 1) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-```{r}
-
-filtered_data <- tl_final %>%
-  filter(!is.na(`tool-typology`) & `tool-typology` != "" & `tool-typology` != "NA")
-ggplot(data = filtered_data) + 
-  aes(y = `tool-typology`) + 
-  geom_bar() +
-  labs(x = "Frequency",
-       y = "Tool Type") +
-  theme_minimal() +
-  theme(axis.text.y = element_text(angle = 20, hjust = 1, vjust = 0.5))
-
-```
-
-
-PCA-LAYER
-
-```{r}
-# prepare the data for PCA-layer
-
-# Calculating Blank Frequency
-blank_freq <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
-  group_by(layer) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(corefrag)) %>%
-  group_by(layer) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(tooltypegroup)) %>%
-  group_by(layer) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-# Combining all the calculated frequencies into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer")
-
-# Printing the final table
-final_table
-
-```
-
-```{r}
-# Blank Frequency
-blank_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d"), !is.na(blank)) %>%
-  group_by(layer) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "e or d")) %>%
-  group_by(layer) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / n(), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "e or d"), !is.na(tooltypegroup)) %>%
-  group_by(layer) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-#------------------------------------------------------------------------------
-# BM: I wasn't able to run any code below this line
-##SS: fixed
-# -----------------------------------------------------------------------------
-
-# Calculating Retouch Frequency
-retouch_freq <- tl_final %>%
-  filter(layer %in% c("a", "c", "d", "e", "eor d")) %>%
-  group_by(layer) %>%
-  summarise(retFreq = sum(retouch == 1, na.rm = TRUE) / n(), .groups = 'drop')
-
-
-# Combining all the calculated frequencies, including retouch frequency, into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer") %>%
-  inner_join(retouch_freq, by = "layer") 
-
-
-final_table
-
-```
-
-```{r}
-# Joining calculated frequencies
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "layer") %>%
-  inner_join(tool_div, by = "layer") %>%
-  inner_join(retouch_freq, by = "layer")
-
-# Converting layer to row names
-final_table_rownames <- final_table %>%
-  column_to_rownames(var = "layer")
-
-```
-
-```{r}
-# Compute the PCA
-library(FactoMineR)
-
-res_pca <-
-  PCA(final_table_rownames,
-      graph = FALSE)
-
-```
-
-```{r}
-library(factoextra)
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca,
-             axes = 1,   
-             choice = "var") 
-
-```
-
-```{r}
-library(factoextra)
-
-# contributions of variables to the second principal component
-fviz_contrib(res_pca,
-             axes = 2,   
-             choice = "var") 
-
-```
-
-```{r}
-library(factoextra)
-
-#  biplot
-fviz_pca_biplot(res_pca)
-```
-
-```{r}
-library(factoextra)
-fviz_screeplot(res_pca)
-```
-
-```{r}
-fviz_pca_var(res_pca)
-```
-
-```{r}
-
-library(FactoMineR)
-library(factoextra)
-
-# Run PCA
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca, axes = 1, choice = "var") 
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca, axes = 2, choice = "var")
-
-# Visualize eigenvalues and explained variance
-fviz_screeplot(res_pca)
-
-# Create a biplot of the PCA
-fviz_pca_biplot(res_pca)
-
-# Visualize the variables on the principal components
-fviz_pca_var(res_pca)
-
-
-```
-
-```{r}
-# Run PCA
-library(FactoMineR)
-library(factoextra)
-
-
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-# Get the coefficients of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-
-print(loadings_matrix)
-
-```
-
-```{r}
-#Table
-
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-
-# Variance percent
-variance_percent <- res_pca$eig[1:2, 2]
-
-# Cumulative variance percent
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-
-print(df)
-
-```
-
-```{r}
-#Table 
-
-library(gt)
-
-# Create data frame
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-rownames(df) <- c("Dim1", "Dim2")
-
-# Create the table using gt
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = vars(Eigenvalue, Variance_Percent, Cumulative_Variance_Percent),
-    decimals = 2
-  )
-
-
-```
-
-
-
-feature frequency: d1 1 ta 1 tp1 0)
-
-
-
-```{r}
-library(dplyr)
-library(FactoMineR)
-library(tibble)
-
-# Define estimated area and feature frequency data
-area_data <- tibble(
-  area = c("d1", "ta", "tp1"),
-  feature_freq = c(1, 1, 0)
-)
-
-
-
-# Step 1: Number of artifacts by area
-artifact_counts <- tl_final_area %>%
-  group_by(area) %>%
-  tally()
-
-# Step 2: Calculate each variable
-
-# Retouch Frequency 
-retouch_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(retouchFreq = mean(!is.na(retouch)), .groups = 'drop')
-
-# Blank Frequency
-blank_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(blankFreq = mean(!is.na(blank)), .groups = 'drop')
-
-# Core Frequency
-core_freq <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(coreFreq = mean(!is.na(`core-typology`)),.groups = 'drop')
-
-# Lithic density (Artifact counts / estimated area)
-lithic_density <- artifact_counts %>%
-  left_join(area_data, by = "area") %>%
-  mutate(lithic_density = n / estimated_area)
-
-# Tool Diversity using Menhinick's Index
-tool_div <- tl_final_area %>%
-  group_by(area) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(n()), .groups = 'drop')
-
-# Step 3: Combining all variables 
-
-
-pca_final_table_area <- left_join(dimensions, retouch_freq, by = "area") %>%
-  left_join(blank_freq, by = "area") %>%
-  left_join(core_freq, by = "area") %>%
-  left_join(lithic_density, by = "area") %>%
-  left_join(tool_div, by = "area") %>%
-  select(area, new_dimensions, feature_freq, retouchFreq, blankFreq, coreFreq, lithic_density, toolDiv)
-
+                axes = c(3, 4),
+                labelsize = 2
+                )
+rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 
 
 
@@ -3129,458 +2267,5 @@ pca_final_table_area <- left_join(dimensions, retouch_freq, by = "area") %>%
 
 ```
 
-```{r}
-pca_final_table_area <- pca_final_table_area %>%
-    select(
-        area, 
-        estimated_area = estimated_area.x, 
-        feature_freq = feature_freq.x, 
-        retouchFreq, 
-        blankFreq, 
-        coreFreq, 
-        n, 
-        lithic_density, 
-        toolDiv
-    )
 
-```
 
-```{r}
-# Step 4: Perform PCA
-res_pca_area <- PCA(pca_final_table_area %>% select(-area, -n), graph = FALSE)
-
-
-# Show the summary of PCA
-print(res_pca_area)
-
-
-print(res_pca_area$eig)
-print(res_pca_area$var$coord)
-```
-
-```{r}
-# TABLE: Eigenvalues and percentage of variance for each dimension of PCA 
-library(kableExtra)
-
-# Define the values manually (you would get these from your PCA results)
-# BM: I prefer not to write values in the code like this. I think
-# this is bad practice and leads to mistakes
-eigenvalues <- c(4.411234, 2.588766)
-prop_var_explained <- c(63.02, 36.98)
-cumulative_var_explained <- c(63.02, 100.00)
-
-# Create the data frame
-results_df <- data.frame(
-  Dimension = c("Dim. 1", "Dim. 2"),  # Only keep the dimensions you want to display
-  Eigenvalue = eigenvalues,
-  `Variance / percent` = prop_var_explained,
-  `Cumulative / variance percent` = cumulative_var_explained
-)
-
-# Generate the table
-kable(results_df,
-      caption = "Table 3. Eigenvalues and percentage of variance for each dimension of PCA",
-      align = 'c',
-      col.names = c("Dimension", "Eigenvalue", "Variance (%)", "Cumulative Variance (%)")) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 11)
-
-```
-
-```{r}
-#plotting Dim-1 and Dim-2
-library(FactoMineR)
-library(factoextra)
-
-
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca_area, axes = 1, choice = "var")
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca_area, axes = 2, choice = "var")
-
-
-```
-
-```{r}
-
-# having Dim1 and Dim2 plots next to each other
-
-library(gridExtra)
-
-# Create the first plot and assign it to p1
-p1 <- fviz_contrib(res_pca_area, axes = 1, choice = "var")
-
-# Create the second plot and assign it to p2
-p2 <- fviz_contrib(res_pca_area, axes = 2, choice = "var")
-
-# Use grid.arrange to place them next to each other
-grid.arrange(p1, p2, ncol = 2)
-
-```
-
-```{r}
-
-loadings <- res_pca_area$var$coord
-
-# 
-eigenvalues <- res_pca_area$eig
-
-#  Dim.1
-contrib_dim1 <- (loadings[,1]^2 / eigenvalues[1, 1]) * 100
-
-#  Dim.2
-contrib_dim2 <- (loadings[,2]^2 / eigenvalues[2, 1]) * 100
-
-
-contrib_df <- data.frame(
-  Variable = rownames(loadings),
-  Contrib_Dim1 = contrib_dim1,
-  Contrib_Dim2 = contrib_dim2
-)
-
-
-print(contrib_df)
-
-```
-
-```{r}
-# screeplot
-
-library(FactoMineR)
-library(factoextra)
-
-
-fviz_eig(res_pca_area)
-
-```
-
-```{r}
-# Correlation plots of variables for each of the tow relevant PCA dimensions
-
-fviz_pca_var(res_pca_area, 
-             
-             repel = TRUE) + 
-  theme(text = element_text(size = 10))
-
-
-
-```
-
-```{r}
-# Eigenvalues and percentage of variance
-eig.val <- res_pca_area$eig
-print(eig.val)
-
-# Variable coordinates (correlations with principal components)
-var.coord <- res_pca_area$var$coord
-print(var.coord)
-
-```
-
-```{r}
-#PCA biplot for Dimensions 1 and 2
-
-fviz_pca_biplot(res_pca_area, labelsize = 3, repel = TRUE)
-
-```
-
-```{r}
-# biplot 
-p <- fviz_pca_biplot(res_pca_area, label = "none", 
-                     repel = TRUE, labelsize = 4)
-
-
-p + geom_text(aes(x = res_pca_area$ind$coord[, 1], 
-                  y = res_pca_area$ind$coord[, 2], 
-                  label = pca_final_table_area$area), 
-             size = 3, nudge_x = 0.1, nudge_y = 0.1)
-
-
-```
-
-```{r}
-individual_coordinates = res_pca_area$ind$coord
-variable_coordinates = res_pca_area$var$coord
-
-```
-
-```{r}
-# For variables
-fviz_cos2(res_pca_area, choice = "var")
-
-# For individuals
-fviz_cos2(res_pca_area, choice = "ind")
-
-
-```
-
-DONE WITH PCA
-
-```{r}
-
-individual_coordinates <- res_pca_area$ind$coord
-
-
-individual_coordinates_df <- as.data.frame(individual_coordinates)
-individual_coordinates_df$area <- unique(area_data$area)
-
-
-print(individual_coordinates_df)
-
-```
-
-```{r}
-library(kableExtra)
-
-
-# Extract individual coordinates
-individual_coordinates <- res_pca_area$ind$coord
-
-# Convert to a data frame for better visibility and add the 'area' column back for context
-individual_coordinates_df <- as.data.frame(individual_coordinates)
-individual_coordinates_df$Area <- unique(area_data$area)  # Make sure the order matches
-
-# Use kable to create a beautiful table
-kable(individual_coordinates_df, 
-      col.names = c("Area", "Principal Component 1", "Principal Component 2"), 
-      caption = "PCA Coordinates for the Archaeological Areas excavation",
-      align = c('l', 'c', 'c'),
-      digits = 3) %>%
-  kable_styling("striped", full_width = F)
-
-```
-
-```{r}
-# Get the loadings (coefficients) of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-```
-
-```{r}
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-variance_percent <- res_pca$eig[1:2, 2]
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-# Print the table
-print(df)
-
-```
-
-```{r}
-library(gt)
-
-
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
-    decimals = 2
-  )
-
-
-```
-
-```{r}
-
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Print the resulting table
-print(artifact_counts)
-```
-
-```{r}
-
-
-blank_freq <- tl_final_area %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(blank)) %>%
-  group_by(area) %>%
-  summarise(blankFreq = sum(blank %in% c("bladelet", "blade", "flake")) / sum(!is.na(blank)), .groups = 'drop')
-
-# Calculating Core Frequency
-core_freq <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(corefrag)) %>%
-  group_by(area) %>%
-  summarise(coreFreq = sum(corefrag %in% c("core fragment", "bullet", "flat", "pyramid", "cylinder/prismatic", "core rejuvenation piece", "shapeless", "core on flake", "bipolar")) / sum(!is.na(corefrag)), .groups = 'drop')
-
-# Calculating Tool Diversity using Menhinick's Index
-tool_div <- tl_final_area %>%
-  filter(area %in% c("ta", "d1", "tp1"), !is.na(tooltypegroup)) %>%
-  group_by(area) %>%
-  summarise(toolDiv = length(unique(tooltypegroup)) / sqrt(sum(!is.na(tooltypegroup))), .groups = 'drop')
-
-# Combining all the calculated frequencies into one tibble
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "area") %>%
-  inner_join(tool_div, by = "area")
-
-# Printing the final table
-print(final_table)
-
-```
-
-```{r}
-# Joining calculated frequencies
-final_table <- blank_freq %>%
-  inner_join(core_freq, by = "area") %>%
-  inner_join(tool_div, by = "area") %>%
-  inner_join(retouch_freq, by = "area")
-
-# Converting area to row names
-final_table_rownames <- final_table %>%
-  column_to_rownames(var = "area")
-
-```
-
-```{r}
-
-library(FactoMineR)
-library(factoextra)
-
-# Run PCA
-res_pca <- PCA(final_table_rownames, graph = FALSE)
-
-
-
-# Visualize the contributions of variables to the second principal component
-fviz_contrib(res_pca, axes = 2, choice = "var")
-
-
-```
-
-```{r}
-# Visualize the contributions of variables to the first principal component
-fviz_contrib(res_pca, axes = 1, choice = "var") 
-```
-
-```{r}
-# Visualize eigenvalues and explained variance
-fviz_screeplot(res_pca)
-```
-
-```{r}
-fviz_pca_biplot(res_pca, labelsize = 3, repel = TRUE)
-
-
-```
-
-```{r}
-# Visualize the variables on the principal components
-fviz_pca_var(res_pca)
-```
-
-```{r}
-# Get the loadings (coefficients) of original variables for each principal component
-loadings_matrix <- res_pca$var$coord
-
-# Print the loadings matrix
-print(loadings_matrix)
-
-```
-
-```{r}
-# Eigenvalues
-eigenvalues <- res_pca$eig[1:2, 1]
-variance_percent <- res_pca$eig[1:2, 2]
-cumulative_variance_percent <- res_pca$eig[1:2, 3]
-
-# Create the table
-df <- data.frame(Eigenvalue = eigenvalues,
-                 Variance_Percent = variance_percent,
-                 Cumulative_Variance_Percent = cumulative_variance_percent)
-
-rownames(df) <- c("Dim1", "Dim2")
-
-# Print the table
-print(df)
-
-```
-
-```{r}
-library(gt)
-
-
-# Create the table 
-gt(df) %>%
-  tab_header(
-    title = "",
-    subtitle = "Eigenvalues and percentage of variance for each dimension of PCA"
-  ) %>%
-  cols_label(
-    Eigenvalue = "Eigenvalue",
-    Variance_Percent = "Variance (%)",
-    Cumulative_Variance_Percent = "Cumulative Variance (%)"
-  ) %>%
-  fmt_number(
-    columns = c("Eigenvalue", "Variance_Percent", "Cumulative_Variance_Percent"),
-    decimals = 2
-  )
-
-
-```
-
-```{r}
-# Count the number of artifacts by area
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Print the resulting table
-print(artifact_counts)
-
-```
-
-```{r}
-
-volumes <- data.frame(
-  area = c("ta", "tp1", "d1"),
-  volume = c(52, 5.76, 2.1375)
-)
-
-# Count the number of artifacts by area
-artifact_counts <- tl_final %>%
-  filter(area %in% c("ta", "tp1", "d1")) %>%
-  group_by(area) %>%
-  tally()
-
-# Join artifact_counts with volumes by area
-lithic_density_df <- left_join(artifact_counts, volumes, by = "area")
-
-# Compute lithic density for each area
-lithic_density_df <- lithic_density_df %>%
-  mutate(lithic_density = n / volume)
-
-# Print the resulting table
-print(lithic_density_df[, c("area", "lithic_density")])
-
-```
-
-```{r}
-# Counting the number of cores by area
-core_counts <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1") & !is.na(`core and core fragments`)) %>%
-  group_by(area) %>%
-  tally()
-
-print(core_counts)
-
-```
