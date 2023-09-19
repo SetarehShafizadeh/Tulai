@@ -1496,8 +1496,21 @@ library(dplyr)
 tl_final_area <- tl_final %>%
   filter(area %in% c("ta", "d1", "tp1"))
 
-```
 
+summary_table_area_filtered <- summary_table_area %>%
+  filter(area %in% c("ta", "d1", "tp1"))
+
+library(kableExtra)
+
+kable(summary_table_area_filtered, 
+      caption = "Table: Summary by Area for 'ta', 'd1', and 'tp1'", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
 
 
 Summary tables: 1. AREA
@@ -1809,6 +1822,8 @@ summary_table1_layer <- tl_final %>%
 ```
 
 
+
+
 ```{r}
 # Create a summary table based on the 'depth', 'area', and 'layer' columns
 tl_final <- tl_final %>%
@@ -1997,6 +2012,8 @@ sum_depth_sheet <- sum_depth_sheet %>%
 
 
 ```{r}
+library(ggpmisc)
+
 # Create the plot: WABI_Level_logscale
 # here I do not consider those levels with a value 0 of retouch frequency. 
 filtered_data <- sum_depth_sheet %>% 
@@ -2048,13 +2065,13 @@ print(WABI_Level)
 ```{r}
 #PCA_Level: preparing data
 
-#PCA_level: for PCA Bicho and Cascalheira considered these variables: estimated area (as we calculated based on levels, I consider the thickness; is that OK?), core frequency, blank frequency, chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), retouch frequency, tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index); 
-##core frequency
-##blank frequency
-##retouch frequency
-##tool diversity
-##thickness of deposit (???)
-##lithic density
+#PCA_level: for PCA Bicho and Cascalheira considered these variables: estimated area (as we calculated based on levels, should I consider the thickness?), core frequency, blank frequency, chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), retouch frequency, tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index); 
+  ##core frequency
+  ##blank frequency
+  ##retouch frequency
+  ##tool diversity
+  ##thickness of deposit (???)
+  ##lithic density
 
 
 
@@ -2126,10 +2143,14 @@ p4 <- fviz_contrib(res.pca,
                    choice = "var", 
                    axes = 4, 
                    top = 10)
+p5 <- fviz_contrib(res.pca, 
+                   choice = "var", 
+                   axes = 5, 
+                   top = 10)
 
 #combine individual plots into one plot 
 library(gridExtra)
-grid.arrange(p1, p2, p3, p4, ncol = 2)
+grid.arrange(p1, p2, p3, p4, p5, ncol = 2)
 
 
 ```
@@ -2145,18 +2166,21 @@ avg_contrib_dim1 <- mean(contributions[,1], na.rm = TRUE)
 avg_contrib_dim2 <- mean(contributions[,2], na.rm = TRUE)
 avg_contrib_dim3 <- mean(contributions[,3], na.rm = TRUE)
 avg_contrib_dim4 <- mean(contributions[,4], na.rm = TRUE)
+avg_contrib_dim5 <- mean(contributions[,5], na.rm = TRUE)
 
 # Find variables that contribute more than average to each dimension
 high_contrib_dim1 <- contributions[contributions[,1] > avg_contrib_dim1, 1]
 high_contrib_dim2 <- contributions[contributions[,2] > avg_contrib_dim2, 2]
 high_contrib_dim3 <- contributions[contributions[,3] > avg_contrib_dim3, 3]
 high_contrib_dim4 <- contributions[contributions[,4] > avg_contrib_dim4, 4]
+high_contrib_dim5 <- contributions[contributions[,5] > avg_contrib_dim4, 5]
 
 # Sort them in descending order
 sorted_high_contrib_dim1 <- sort(high_contrib_dim1, decreasing = TRUE)
 sorted_high_contrib_dim2 <- sort(high_contrib_dim2, decreasing = TRUE)
 sorted_high_contrib_dim3 <- sort(high_contrib_dim3, decreasing = TRUE)
 sorted_high_contrib_dim4 <- sort(high_contrib_dim4, decreasing = TRUE)
+sorted_high_contrib_dim5 <- sort(high_contrib_dim5, decreasing = TRUE)
 
 # Print or use for further analysis
 print("Significant contributions to Dim1:")
@@ -2170,6 +2194,10 @@ print(sorted_high_contrib_dim3)
 
 print("Significant contributions to Dim4:")
 print(sorted_high_contrib_dim4)
+
+
+print("Significant contributions to Dim5:")
+print(sorted_high_contrib_dim5)
 
 
 
@@ -2247,11 +2275,67 @@ fviz_pca_biplot(res.pca,
                 axes = c(1, 2),
                 labelsize = 2
                 )
+
 rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 
 
 
 ```
+
+
+```{r}
+library(ggrepel)
+
+# Generate the base biplot
+biplot_base <- fviz_pca_biplot(res.pca,
+                               axes = c(1, 2),
+                               labelsize = 2
+                              )
+
+# Modify row names of coordinates
+rownames(res.pca$ind$coord) <- sum_depth_sheet$label
+
+# Add geom_text_repel() to the base plot
+biplot_modified <- biplot_base +
+                   geom_text_repel(data = as.data.frame(res.pca$ind$coord),
+                                   aes(x = Dim.1, 
+                                       y = Dim.2, 
+                                       label = rownames(res.pca$ind$coord)
+                                       ),
+                                   box.padding = 0.5,
+                                   point.padding = 0.5,
+                                   size = 2
+                                  )
+
+# Display the plot
+biplot_modified
+
+```
+
+```{r}
+# Base biplot without points
+biplot_base <- fviz_pca_biplot(res.pca,
+                               axes = c(1, 2),
+                               geom = "none",  
+                               labelsize = 2
+                               )
+
+# Add points and text labels manually
+biplot_modified <- biplot_base +
+  geom_point(data = coord_df, aes(x = Dim.1, y = Dim.2, color = group), size = 1) +
+  geom_text_repel(data = coord_df,
+                  aes(x = Dim.1,
+                      y = Dim.2,
+                      label = label),
+                  box.padding = 0.5,
+                  point.padding = 0.5,
+                  size = 2)
+
+# Display the plot
+biplot_modified
+
+```
+
 
 ```{r}
 # Visualize biplot: 2
