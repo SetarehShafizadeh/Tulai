@@ -1489,6 +1489,44 @@ rev(sort(table(tl_final$`core-fragment`)))
 rev(sort(table(tl_final$blank)))
 ```
 
+
+Summary tables: 1. AREA
+
+```{r}
+# Create a summary table
+summary_table_area <- tl_final %>%
+  group_by(area) %>%
+  summarise(
+    `Cores (n)` = sum(!is.na(core) & core != ""),
+    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
+                                            corefrag != ""),
+    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
+    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
+    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
+    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
+    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
+    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
+  )
+
+# BM: looks like this is area and layer, is that right? I see c1, d1, d2, d3, d4 etc.
+# SS: those are different excavated areas, we mainly consider ta, tp1, and d1.
+knitr::kable(summary_table_area)
+
+```
+
+```{r}
+library(kableExtra)
+
+kable(summary_table_area, 
+      caption = "Table: Summary by Area", 
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                font_size = 12) %>%
+  row_spec(0, bold = TRUE, font_size = 14)
+
+```
+
 ```{r}
 library(dplyr)
 
@@ -1513,43 +1551,7 @@ kable(summary_table_area_filtered,
 ```
 
 
-Summary tables: 1. AREA
 
-```{r}
-# Create a summary table
-summary_table_area <- tl_final %>%
-  group_by(area) %>%
-  summarise(
-    `Cores (n)` = sum(!is.na(core) & core != ""),
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
-                                            corefrag != ""),
-    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
-    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
-    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
-    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
-    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
-    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
-  )
-
-# BM: looks like this is area and layer, is that right? I see c1, d1, d2, d3, d4 etc.
-# SS: those are different excavated areas, we mainly consider ta, tp1, and d1.
-knitr::kable(summary_table_area)
-
-
-```
-
-```{r}
-library(kableExtra)
-
-kable(summary_table_area, 
-      caption = "Table: Summary by Area", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
-
-```
 
 2.LAYER
 
