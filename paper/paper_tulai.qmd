@@ -2098,13 +2098,6 @@ sum_depth_sheet <- sum_depth_sheet %>%
 
 ```
 
-```{r}
-
-pca_data <- sum_depth_sheet %>% 
-  select(lithic_dens, core_freq, blank_freq, retouch_freq, tool_diversity) %>%
-  na.omit()  # Remove rows with NA values
-
-```
 
 ```{r}
 # performin PCA
@@ -2112,8 +2105,21 @@ pca_data <- sum_depth_sheet %>%
 library(FactoMineR)
 library(factoextra)
 
-pca_data <- sum_depth_sheet[, c('lithic_dens', 'core_freq', 'blank_freq', 'retouch_freq', 'tool_diversity')]
+sum_depth_sheet_subset <- 
+ sum_depth_sheet %>%
+  drop_na(tool_diversity) #%>% 
+  #filter(!label %in% c("tp1_c_3_a",
+ #                      "d1_a_2_b",
+  #                     "d1_c_3_b"))
 
+pca_data <- 
+sum_depth_sheet_subset %>% 
+  select(lithic_dens, 
+         core_freq, 
+         blank_freq, 
+         retouch_freq, 
+         tool_diversity)   
+ 
 # Perform PCA
 res.pca <- PCA(pca_data, graph = FALSE)
 
@@ -2125,34 +2131,19 @@ summary(res.pca)
 
 ```{r}
 #Plot: Contribution of variables for each of the four relevant PCA dimensions
-library(factoextra)
-library(ggplot2)
 
 #save contribution plots into one objects
-p1 <- fviz_contrib(res.pca, 
+
+contribution_plots <- 
+map(1:5, ~fviz_contrib(res.pca, 
                    choice = "var", 
-                   axes = 1, 
-                   top = 10)
-p2 <- fviz_contrib(res.pca, 
-                   choice = "var",
-                   axes = 2, 
-                   top = 10)
-p3 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 3, 
-                   top = 10)
-p4 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 4, 
-                   top = 10)
-p5 <- fviz_contrib(res.pca, 
-                   choice = "var", 
-                   axes = 5, 
-                   top = 10)
+                   axes = .x, 
+                   top = 10))
 
 #combine individual plots into one plot 
-library(gridExtra)
-grid.arrange(p1, p2, p3, p4, p5, ncol = 2)
+library(cowplot)
+plot_grid(plotlist = contribution_plots,
+                   ncol = 2)
 
 
 ```
@@ -2197,18 +2188,13 @@ print(sorted_high_contrib_dim3)
 print("Significant contributions to Dim4:")
 print(sorted_high_contrib_dim4)
 
-
 print("Significant contributions to Dim5:")
 print(sorted_high_contrib_dim5)
-
-
-
 ```
 
 
 ```{r}
 # screeplot; inspect distribution of PCs
-library(factoextra)  
 fviz_screeplot(res.pca)
 ```
 
@@ -2216,8 +2202,7 @@ fviz_screeplot(res.pca)
 
 ```{r}
 # Inspect eigenvalues
-print(res.pca$eig)
-
+res.pca$eig
 ```
 
 
@@ -2238,7 +2223,8 @@ library(kableExtra)
 library(htmltools)
 
 # Create a new column named "Dimension"
-eigen_df$Dimension <- paste("Dim", seq_len(nrow(eigen_df)), sep = "")
+eigen_df$Dimension <- 
+  paste("Dim", seq_len(nrow(eigen_df)), sep = "")
 
 # Re-order the columns based on the corrected names
 eigen_df <- eigen_df[, c("Dimension", "eigenvalue", "percentage.of.variance", "cumulative.percentage.of.variance")]
@@ -2262,23 +2248,8 @@ kable_output <- kable(eigen_df,
   add_header_above(c(" " = 1, "Eigenvalues and percentage of variance for each dimension of PCA" = 3))
 
 # Display the table
-htmltools::browsable(kable_output)
+kable_output
 
-
-
-
-```
-
-
-
-```{r}
-# Visualize biplot:1
-fviz_pca_biplot(res.pca,
-                axes = c(1, 2),
-                labelsize = 2
-                )
-
-rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 
 
 
@@ -2288,25 +2259,36 @@ rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 ```{r}
 library(ggrepel)
 
+rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label
+
 # Generate the base biplot
 biplot_base <- fviz_pca_biplot(res.pca,
                                axes = c(1, 2),
-                               labelsize = 2
+                               labelsize = 2,
+                               label = "var",
+                               addEllipses = TRUE,
+                               col.ind = sum_depth_sheet_subset$area
                               )
 
 # Modify row names of coordinates
-rownames(res.pca$ind$coord) <- sum_depth_sheet$label
+rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label
+
+pca_label_text <- 
+res.pca$ind$coord %>% 
+  as_tibble() %>% 
+  mutate(labels = sum_depth_sheet_subset$label,
+         area =   sum_depth_sheet_subset$area) 
 
 # Add geom_text_repel() to the base plot
 biplot_modified <- biplot_base +
-                   geom_text_repel(data = as.data.frame(res.pca$ind$coord),
+                   geom_text_repel(data = pca_label_text,
                                    aes(x = Dim.1, 
                                        y = Dim.2, 
-                                       label = rownames(res.pca$ind$coord)
-                                       ),
-                                   box.padding = 0.5,
-                                   point.padding = 0.5,
-                                   size = 2
+                                       label = labels,
+                                       colour = area),
+                                   segment.color = "grey80",
+                                   size = 2,
+                                   force = 10
                                   )
 
 # Display the plot
@@ -2324,7 +2306,10 @@ biplot_base <- fviz_pca_biplot(res.pca,
 
 # Add points and text labels manually
 biplot_modified <- biplot_base +
-  geom_point(data = coord_df, aes(x = Dim.1, y = Dim.2, color = group), size = 1) +
+  geom_point(data = coord_df, 
+             aes(x = Dim.1, 
+                 y = Dim.2, 
+                 color = group), size = 1) +
   geom_text_repel(data = coord_df,
                   aes(x = Dim.1,
                       y = Dim.2,
@@ -2346,11 +2331,6 @@ fviz_pca_biplot(res.pca,
                 labelsize = 2
                 )
 rownames(res.pca$ind$coord) <- sum_depth_sheet$label
-
-
-
-
-
 ```
 
 
