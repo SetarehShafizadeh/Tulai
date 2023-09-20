@@ -19,6 +19,7 @@ library(here)
 library(ggpmisc)
 library(ggrepel)
 library(ggbeeswarm)
+library(cowplot)
 ```
 
 Cleaning Data:
@@ -184,6 +185,7 @@ tl1 %>%
 ```{r}
 # exploring Data
 
+p1 <- 
 tl1 %>% 
   group_by(midpoint) %>% 
   tally() %>% 
@@ -191,11 +193,8 @@ tl1 %>%
 ggplot() + 
   aes(midpoint, n) +
   geom_col()
-```
 
-```{r}
-# exploring Data
-
+p2 <- 
 tl1 %>% 
   group_by(layer) %>% 
   tally() %>% 
@@ -203,6 +202,8 @@ tl1 %>%
 ggplot() + 
   aes(layer, n) +
   geom_col()
+
+plot_grid(p1, p2, ncol = 1)
 ```
 
 ```{r}
@@ -211,13 +212,10 @@ ggplot() +
 tl2 <- tl1 %>%
   mutate(
     Blank = case_when(
-      Breakage %in% c("0", "1", NA_character_) ~ Blank,  
-      
+      Breakage %in% c("0", "1", NA_character_) ~ Blank, 
       TRUE ~ Breakage  
     )
   )
-
-
 ```
 
 ```{r}
@@ -301,9 +299,9 @@ tl2 <- tl2 %>%
   )) %>%
   mutate(Blank = na_if(Blank, ""))
              
-rev(sort(table(tl2$Blank)))
+# rev(sort(table(tl2$Blank)))
 
-# BM: still many typos and unusual categories in here, why is that? Can they be fixed?
+# BM: still many typos and unusual categories in here, why is that? Can they be fixed? This might increase our sample size.
 
 tl3 <- tl2 %>%
   separate(Blank, 
@@ -313,15 +311,11 @@ tl3 <- tl2 %>%
            convert = TRUE)
 
 na_rows <- which(is.na(tl2$Blank))
-print(na_rows)
 
 zero_rows <- which(tl2$Blank == "0")
-print(zero_rows)
-
 one_rows <- which(tl2$Blank == "1")
-print(one_rows)
 
-rev(sort(table(tl3$Blank2))) # BM: still a lot of typos on the categories here, can you fix them?
+# rev(sort(table(tl3$Blank2))) 
 
 ```
 
@@ -351,13 +345,11 @@ tl3 <- tl3 %>%
 ```
 
 ```{r}
-# Remove rows based on row names
-# tl3 <- tl3[!(rownames(tl3) %in% c("1030", "644", "543")), ]
-
-# BM: why are we removing these rows? A comment here would be good to explain. A simpler way, by referencing the row numbers directly:
 # SS: they are natural rocks, and don't want to count them as lithic
+# BM: better to remove them by their ID than by row number, since row number can easily change, but ID cannot
 
-tl3 <- tl3[-c(1030, 644, 543), ]
+tl3 <- tl3 %>% 
+  filter(!lithic_id %in% c("3154", "1741", "1680"))
 ```
 
 ```{r}
@@ -373,18 +365,12 @@ tl4 <- tl3 %>%
 ```{r}
 
 tl4 <- tl4 %>%
-  # BM: the problem with this combination of mutate_all and ifelse that you use below is that they 
-  # coerce all columns to be the same data type, so you'll see that all the numeric
-  # columns are now character columns after you run these lines. So you need to
-  # coerce those number columns back to numeric type so you can plot and compute
-  # with them
-  mutate_all(~ ifelse(is.na(.x) | .x == "", NA, .x)) %>% 
-  # BM: what does this next line do?
-  #SS: I wanted to remove any asterisks, whitespace, or *, ?, or !. is that wrong?
-  
-  mutate_all(~ str_replace(., "(?<=\\D)\\*(?=\\D)|\\s+|[*?!]+", "")) %>%
-  # BM: what is this SHINE variable? I'm not familiar with it
-  
+  # BM: I updated this to use across
+  mutate(across(everything(), 
+                ~ifelse(is.na(.x)|.x == ""|.x == "-", NA, .x))) %>% 
+  #SS:  remove any asterisks, whitespace, or *, ?, or !. is that wrong?
+   mutate(across(everything(),
+                 ~str_replace(., "(?<=\\D)\\*(?=\\D)|\\s+|[*?!]+", ""))) %>%
   ##SS: we meant sickle shine, this is one of the criteria based on which Hole claimed the site is not related to agriculture (similar to ALi Kosh located in Dehluran)
   mutate(
     SHINE = str_trim(SHINE) %>% 
@@ -404,6 +390,7 @@ tl4 <- tl4 %>%
                    "Sub-Paralell", 
                    "Sub-Prallel", 
                    "L:semiparallel/R:scaled",
+                   "L:semiparallel/R: Scaled",
                    "Semiparallel", 
                    "Semi-Parallel", 
                    "Scaled/Sub-Parallel",
@@ -423,16 +410,12 @@ tl4 <- tl4 %>%
 
 
 # BM: I think this is a better way to inspect:
-rev(sort(table(tl4$SHINE)))
-rev(sort(table(tl4$shine2)))
+# rev(sort(table(tl4$SHINE)))
+# rev(sort(table(tl4$shine2)))
 
 ```
 
 ```{r}
-
-# Convert 'NA' and 'na' strings to actual NA
-tl4$`Core Typology` <- na_if(tl4$`Core Typology`, "NA")
-tl4$`Core Typology` <- na_if(tl4$`Core Typology`, "na")
 
 tl4 <- tl4 %>%
   mutate(
@@ -501,14 +484,9 @@ tl4 <- tl4 %>%
            remove = FALSE,
            convert = TRUE)
 
-# Convert 'NA' and 'na' in new columns to actual NA
-tl4$`core-typology` <- na_if(tl4$`core-typology`, "na")
-tl4$`core-technology` <- na_if(tl4$`core-technology`, "na")
-
 # Check the unique values again
-# BM: still many typos, are they important?
-rev(sort(table((tl4$`core-typology`))))
-rev(sort(table((tl4$`core-technology`))))
+# rev(sort(table((tl4$`core-typology`))))
+# rev(sort(table((tl4$`core-technology`))))
 
 ```
 
@@ -1061,27 +1039,9 @@ tl4 <- tl4 %>%
 
 
 # BM: still some typos in there
-rev(sort(table((tl4$`tool-typology`))))
-rev(sort(table((tl4$`core-fragment`))))
+# rev(sort(table((tl4$`tool-typology`))))
+# rev(sort(table((tl4$`core-fragment`))))
 ```
-
-
-```{r}
-# Exploring data
-
-tl4 %>% 
-  # BM: we need this because of the mutate_all ifelse combo you have above
-  mutate(midpoint = parse_number(midpoint)) %>% 
-  group_by(midpoint) %>% 
-  tally() %>% 
-  drop_na(midpoint) %>% 
-ggplot() + 
-  aes(midpoint, n) +
-  geom_col()
-
-```
-
-
 
 ```{r}
 
@@ -1129,7 +1089,6 @@ tl_final <- tl4 %>%
       retouch == 1 ~ "tool",           
       utilization == 1 ~ "tool",
       `sickle shine` == 1 ~ "tool",
-      
       TRUE ~ `typology-tool-core`      
     )
   ) %>% 
@@ -1152,12 +1111,10 @@ tl_final <- tl4 %>%
   )
 
 # BM: take a look at tool typology
-rev(sort(table(tl_final$`tool-typology`)))
+# rev(sort(table(tl_final$`tool-typology`)))
 
 
 ```
-
-
 
 ```{r}
 # List of columns that should be numeric
@@ -1173,54 +1130,31 @@ columns_to_convert <- c("cortex",
 
 
 # Convert each column to numeric
-for (col_name in columns_to_convert) {
-  # Replace non-numeric characters with NA
-  # BM: this is quite an unusual method for doing this, 
-  # where did you find it?
-  tl_final[[col_name]][tl_final[[col_name]] %in% c("", "NA", "N/A")] <- NA
-  # Convert to numeric
-  tl_final[[col_name]] <- as.numeric(tl_final[[col_name]])
-}
+
 
 # BM: this is how I would convert those columns to numeric, 
 # I think it's easier to read and requires less typing
-# tl_final %>% 
-#  mutate(across(all_of(columns_to_convert), parse_number))
+tl_final <- 
+tl_final %>% 
+ mutate(across(all_of(columns_to_convert), 
+               parse_number))
 
 # check the structure to see if they have been converted
-str(tl_final)
+# str(tl_final)
 ```
-
 
 ```{r}
 #set the value of utilization to NA only for the rows where `sickle shine` == 1.
 
-
 tl_final <- tl_final %>%
   rowwise() %>%
-  mutate(utilization = ifelse(is.na(`sickle shine`) | is.na(utilization), utilization,
-                              ifelse(`sickle shine` == 1 & utilization == 1, NA_real_, utilization))) %>%
-  ungroup()
-
-
-
-```
-
-
-```{r}
-#number of `sickle shine` in clumn `sickle shine`=1 and tooltypegroup are not match: 
-rev(sort(table(tl_final$tooltypegroup)))
-rev(sort(table(tl_final$`sickle shine`)))
-
-#troubleshoot:
-tl_final %>% filter(`sickle shine` == 1) %>% 
-  select(`tool-typology`, 
-         `sickle shine`)
-
-tl_final %>% filter(`tool-typology` == "sickle shine") %>% 
-  select(`tool-typology`, `sickle shine`)
-
-tl_final <- tl_final %>%
+  mutate(utilization = ifelse(is.na(`sickle shine`) | is.na(utilization),
+                              utilization,
+                              ifelse(`sickle shine` == 1 & utilization == 1, 
+                                     NA_real_, 
+                                     utilization))) %>%
+  ungroup() %>%
+  # make the number of `sickle shine` in column `sickle shine` match:
   mutate(
     `tool-typology` = case_when(
       `sickle shine` == 1 ~ "sickle shine",
@@ -1230,9 +1164,8 @@ tl_final <- tl_final %>%
   )
 
 
-rev(sort(table(tl_final$`tool-typology`)))
-```
 
+```
 
 ```{r}
 
@@ -1310,14 +1243,11 @@ tl_final <- tl_final %>%
   )
 
 # Checking the unique values of tooltypegroup
-rev(sort(table(tl_final$tooltypegroup)))
+# rev(sort(table(tl_final$tooltypegroup)))
 
 ```
 
 ```{r}
-
-library(dplyr)
-library(stringr)
 
 # Define the patterns to search for
 patterns <- c("denticulate-notch", "retouched piece", "scraper",
@@ -1328,15 +1258,15 @@ patterns <- c("denticulate-notch", "retouched piece", "scraper",
 # Update the `retouch` column based on the `tooltypegroup` column
 tl_final <- tl_final %>%
   mutate(retouch = ifelse(str_detect(tooltypegroup, 
-                                     str_c(patterns, collapse = "|")), 
+                                     str_c(patterns, 
+                                           collapse = "|")), 
                           1, retouch))
 
 # View the first few rows to confirm
-head(tl_final)
-rev(sort(table(tl_final$tooltypegroup)))
-rev(sort(table(tl_final$retouch)))
+# head(tl_final)
+# rev(sort(table(tl_final$tooltypegroup)))
+# rev(sort(table(tl_final$retouch)))
 ```
-
 
 ```{r}
 tl_final <- tl_final %>%
@@ -1483,14 +1413,14 @@ tl_final <- tl_final %>%
 
 
 # take a look
-rev(sort(table(tl_final$core)))
-rev(sort(table(tl_final$corefrag)))
-rev(sort(table(tl_final$`core-fragment`)))
-rev(sort(table(tl_final$blank)))
+# rev(sort(table(tl_final$core)))
+# rev(sort(table(tl_final$corefrag)))
+# rev(sort(table(tl_final$`core-fragment`)))
+# rev(sort(table(tl_final$blank)))
 ```
 
 
-Summary tables: 1. AREA
+### Summary tables: AREA
 
 ```{r}
 # Create a summary table
@@ -1508,52 +1438,28 @@ summary_table_area <- tl_final %>%
     `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
   )
 
-# BM: looks like this is area and layer, is that right? I see c1, d1, d2, d3, d4 etc.
-# SS: those are different excavated areas, we mainly consider ta, tp1, and d1.
-knitr::kable(summary_table_area)
 
+# SS: we mainly consider ta, tp1, and d1.
+knitr::kable(summary_table_area,
+             caption = "Summary of lithics in all areas")
 ```
 
-```{r}
-library(kableExtra)
-
-kable(summary_table_area, 
-      caption = "Table: Summary by Area", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
-
-```
 
 ```{r}
-library(dplyr)
 
 # Filter the data to include only the areas 'ta', 'd1', and 'tp1'
 tl_final_area <- tl_final %>%
   filter(area %in% c("ta", "d1", "tp1"))
 
-
 summary_table_area_filtered <- summary_table_area %>%
   filter(area %in% c("ta", "d1", "tp1"))
 
-library(kableExtra)
-
-kable(summary_table_area_filtered, 
-      caption = "Table: Summary by Area for 'ta', 'd1', and 'tp1'", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+knitr::kable(summary_table_area_filtered,
+             caption = "Summary of lithics in the main areas")
 
 ```
 
-
-
-
-2.LAYER
+### Summary tables: LAYER
 
 ```{r}
 # Create a summary table
@@ -1575,16 +1481,12 @@ summary_table_layer <- tl_final %>%
 ```{r}
 # Generate the table
 kable(summary_table_layer, 
-      caption = "Table: Summary by Layer", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+      caption = "Summary of lithics by Layer", 
+      align = 'c') 
 
 ```
 
-AREA-LAYER:
+### Summary tables: AREA-LAYER:
 
 ```{r}
 # Create a summary table based on the 'al' column
@@ -1607,20 +1509,11 @@ summary_table_al <- tl_final %>%
 # Generate the table
 
 kable(summary_table_al, 
-      caption = "Table: Summary by Al", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+      caption = "Summary of lithics by Area and layer") 
 
 ```
 
-
-
-
-
-Techno-Typo:
+### Summary tables: Techno-Typology
 
 ```{r}
 
@@ -1710,7 +1603,7 @@ summary_table_al <- summary_table_al %>%
     total =                    sum(.$total, na.rm = TRUE)  
   )
 
-rev(sort(table(tl_final$tooltypegroup)))
+# rev(sort(table(tl_final$tooltypegroup)))
 ```
 
 ```{r}
@@ -1720,15 +1613,11 @@ summary_table_tooltype <- tl_final %>%
   filter(tooltypegroup != 'utilized tool') %>%  # Exclude 'utilized tool'
   group_by(tooltypegroup) %>% 
   summarise(
-   
   )
-
 ```
 
-
-
 ```{r}
-#generate a table
+# generate a table
 
 summary_table_al <- summary_table_al %>%
   filter(!(al %in% c("D1_NA", "TP1_NA")))
@@ -1748,22 +1637,9 @@ kable(
     "Sickle Shine",
     "Total"
   ),
-  caption = "Table: Summary ",
-  align = 'c'
-) %>%
-  kable_styling(
-    bootstrap_options = c("striped", 
-                          "hover", 
-                          "condensed"),
-    full_width = FALSE,
-    font_size = 12
-  ) %>%
-  row_spec(0, 
-           bold = TRUE, 
-           font_size = 14)
+  caption = "Summary of lithics by techno-typological classification")
 
 ```
-
 
 ```{r}
 # Create a summary table for typology based on area
@@ -1790,22 +1666,12 @@ summary_table_tool_area <-
 
 ```
 
-
 ```{r}
 
 kable(
   summary_table_tool_area,
   col.names = c("Tools", "D1", "TA", "TP1", "Total"),
-  caption = "Table: Tool Typology in three different main areas.",
-  align = 'c'
-) %>%
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed"),
-    full_width = F,
-    font_size = 12
-  ) %>%
-  column_spec(1, extra_css = "text-align:left;") %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+  caption = "Tool Typology in the three main areas")
 
 ```
 
@@ -1822,9 +1688,6 @@ summary_table1_layer <- tl_final %>%
   )
 
 ```
-
-
-
 
 ```{r}
 # Create a summary table based on the 'depth', 'area', and 'layer' columns
@@ -1846,15 +1709,8 @@ summary_table_depth_area_layer <- tl_final %>%
   )
 
 # Generate the table
-library(kableExtra)
-
 kable(summary_table_depth_area_layer, 
-      caption = "Table: Summary by Depth, Area, and Layer", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+      caption = "Summary of lithics by Depth, Area, and Layer")
 ```
 
 ```{r}
@@ -1880,21 +1736,12 @@ summary_table_depth_area_layer <-
             by = "depth")
 
 # Generate the table
-library(kableExtra)
 
 kable(summary_table_depth_area_layer, 
-      caption = "Table: Summary by Depth, Area, and Layer", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+      caption = "Summary of lithics by Depth, Area, and Layer")
 
 
 ```
-
-
-
 
 ```{r}
 # Specify the exact columns want to keep
@@ -1909,23 +1756,27 @@ summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
   filter(area %in% c('ta', 'd1', 'tp1'))
 
 # Generate the table
-library(kableExtra)
-
 kable(summary_table_depth_area_layer, 
-      caption = "Table: Summary by Depth, Area, and Layer", 
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
-                full_width = F, 
-                font_size = 12) %>%
-  row_spec(0, bold = TRUE, font_size = 14)
+      caption = "Summary of lithics by Depth, Area, and Layer")
 
 
 ```
 
-
 ```{r}
 
-#Here, I've imported the table 'Summary by Depth, Area, Layer' into Google Sheets for easier management.
+# import table with depths that we have subdivided
+depths_divided_tbl <- read_csv(here("data/Lookup Table - Sheet1.csv"))
+
+# join with lithic data
+tl_final %>% 
+  left_join(depths_divided_tbl) %>% View
+
+```
+
+```{r}
+#| eval: false
+
+# Here, I've imported the table 'Summary by Depth, Area, Layer' into Google Sheets for easier management.
 #I thought this format would simplify the process of those depths needed to be splitting up.
 
 # BM: looks like you need this data starting from around here in the document
@@ -1936,8 +1787,6 @@ library(googlesheets4)
 google_sheet_url <- 
   "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
 sum_depth_sheet <- read_sheet(google_sheet_url)
-
-
 
 # Create the 'label' column
 sum_depth_sheet <- sum_depth_sheet %>%
@@ -1976,9 +1825,6 @@ sum_depth_sheet <- sum_depth_sheet %>%
 
 
 #SS: is that true?: (I have a weird number in row 5, cl Depth and couldn't find out what happened)
-
-
-
 
 
 #### previously I had a column'excavation area'; I seprated them in 2 columns in order to calculate the colume; but now when I wanted to run the code it said "! object 'excavation area' not found"; would it be OK to delete these lines? 
