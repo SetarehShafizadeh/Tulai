@@ -20,6 +20,7 @@ library(ggpmisc)
 library(ggrepel)
 library(ggbeeswarm)
 library(cowplot)
+library(knitr)
 ```
 
 Cleaning Data:
@@ -1419,7 +1420,6 @@ tl_final <- tl_final %>%
 # rev(sort(table(tl_final$blank)))
 ```
 
-
 ### Summary tables: AREA
 
 ```{r}
@@ -1443,7 +1443,6 @@ summary_table_area <- tl_final %>%
 knitr::kable(summary_table_area,
              caption = "Summary of lithics in all areas")
 ```
-
 
 ```{r}
 
@@ -1694,7 +1693,6 @@ summary_table1_layer <- tl_final %>%
 tl_final <- tl_final %>%
   mutate(depth = gsub("cm", "", depth))
 
-
 summary_table_depth_area_layer <- tl_final %>%
   group_by(TA, depth, area, layer, upper, lower) %>%  
   summarise(
@@ -1707,6 +1705,9 @@ summary_table_depth_area_layer <- tl_final %>%
     `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
     `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
   )
+
+summary_table_depth_area_layer_to_join <- 
+  summary_table_depth_area_layer
 
 # Generate the table
 kable(summary_table_depth_area_layer, 
@@ -1745,11 +1746,24 @@ kable(summary_table_depth_area_layer,
 
 ```{r}
 # Specify the exact columns want to keep
-desired_columns <- c("TA", "depth", "area", "layer", "upper", "lower", 
-                     "Cores (n)", "Core rejuvenations pieces (n)", 
-                     "Blade (n)", "Flake (n)", "Bladelet (n)", 
-                     "Retouched Tools (n)", "Utilized (n)", "Sickle Shine (n)",
-                     "tool_type")  # Only keep this 'tool_type'
+desired_columns <-
+  c(
+    "TA",
+    "depth",
+    "area",
+    "layer",
+    "upper",
+    "lower",
+    "Cores (n)",
+    "Core rejuvenations pieces (n)",
+    "Blade (n)",
+    "Flake (n)",
+    "Bladelet (n)",
+    "Retouched Tools (n)",
+    "Utilized (n)",
+    "Sickle Shine (n)",
+    "tool_type"
+  )  # Only keep this 'tool_type'
 
 # Filter the tl_final dataframe
 summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
@@ -1758,18 +1772,29 @@ summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
 # Generate the table
 kable(summary_table_depth_area_layer, 
       caption = "Summary of lithics by Depth, Area, and Layer")
-
-
 ```
 
 ```{r}
 
 # import table with depths that we have subdivided
-depths_divided_tbl <- read_csv(here("data/Lookup Table - Sheet1.csv"))
+depths_divided_tbl <- 
+  read_csv(here("data/Lookup Table - Sheet1.csv")) %>% 
+  mutate(division_id = rep(c("a", "b"),
+                           nrow(.)/2))
 
-# join with lithic data
-tl_final %>% 
-  left_join(depths_divided_tbl) %>% View
+# google sheet has 42 rows, and cols for 
+# area, layer, level, depth. What is the equivalent above? tp1_c_3_a
+
+# This 'depths_divided_tbl' needs more information, for example, some depth ranges 
+
+# join with lithic data that 
+summary_table_depth_area_layer_to_join %>% 
+  left_join(depths_divided_tbl) %>% 
+  mutate(label = paste(area, 
+                       layer, 
+                       # level, # need this
+                       division_id,
+                       sep = "_")) %>% View
 
 ```
 
@@ -1781,7 +1806,6 @@ tl_final %>%
 
 # BM: looks like you need this data starting from around here in the document
 
-library(tidyverse)
 library(googlesheets4)
 
 google_sheet_url <- 
@@ -1856,9 +1880,6 @@ sum_depth_sheet <- sum_depth_sheet %>%
 
 ```
 
-
-
-
 ```{r}
 library(ggpmisc)
 
@@ -1909,7 +1930,6 @@ print(WABI_Level)
 
 ```
 
-
 ```{r}
 #PCA_Level: preparing data
 
@@ -1944,7 +1964,6 @@ sum_depth_sheet <- sum_depth_sheet %>%
 
 ```
 
-
 ```{r}
 # performin PCA
 
@@ -1974,7 +1993,6 @@ summary(res.pca)
 
 ```
 
-
 ```{r}
 #Plot: Contribution of variables for each of the four relevant PCA dimensions
 
@@ -1993,8 +2011,6 @@ plot_grid(plotlist = contribution_plots,
 
 
 ```
-
-
 
 ```{r}
 # Extract contributions of variables to each principal component
@@ -2038,19 +2054,15 @@ print("Significant contributions to Dim5:")
 print(sorted_high_contrib_dim5)
 ```
 
-
 ```{r}
 # screeplot; inspect distribution of PCs
 fviz_screeplot(res.pca)
 ```
 
-
-
 ```{r}
 # Inspect eigenvalues
 res.pca$eig
 ```
-
 
 ```{r}
 eigen_df <- data.frame(
@@ -2060,8 +2072,6 @@ eigen_df <- data.frame(
 )
 
 ```
-
-
 
 ```{r}
 
@@ -2100,7 +2110,6 @@ kable_output
 
 
 ```
-
 
 ```{r}
 library(ggrepel)
@@ -2169,7 +2178,6 @@ biplot_modified
 
 ```
 
-
 ```{r}
 # Visualize biplot: 2
 fviz_pca_biplot(res.pca,
@@ -2178,6 +2186,3 @@ fviz_pca_biplot(res.pca,
                 )
 rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 ```
-
-
-
