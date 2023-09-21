@@ -128,8 +128,8 @@ tl1 <- tl1 %>%
   mutate(lower = parse_number(lower)) %>% 
   rowwise() %>% 
   mutate(midpoint = mean(c(upper, lower))) %>%
-# create 'layer' column
-  mutate(layer = case_when(
+# create 'chronological unit' column
+  mutate(chronological_unit = case_when(
       area == "tp1" & depth == "0-10 cm" ~ "c",
       area == "tp1" & depth == "0-20 cm" ~ "c",
       area == "tp1" & depth == "10-30 cm" ~ "c",
@@ -138,14 +138,14 @@ tl1 <- tl1 %>%
       area == "tp1" & depth == "30-40 cm" ~ "c",
       area == "tp1" & depth == "40-50 cm" ~ "c",
       area == "tp1" & depth == "50-100 cm" ~ "c",
-      area == "tp1" & depth == "50-60 cm" ~ "c",
-      area == "tp1" & depth == "50-70 cm" ~ "c",
-      area == "tp1" & depth == "80-90 cm" ~ "c",
-      area == "tp1" & depth == "90-100 cm" ~ "c",
-      area == "tp1" & depth == "100-110 cm" ~ "c",
-      area == "tp1" & depth == "110-120 cm" ~ "c",
-      area == "tp1" & depth == "120-130 cm" ~ "c",
-      area == "tp1" & depth == "120-140 cm" ~ "c",
+      area == "tp1" & depth == "50-60 cm" ~ "b",
+      area == "tp1" & depth == "50-70 cm" ~ "b",
+      area == "tp1" & depth == "80-90 cm" ~ "b",
+      area == "tp1" & depth == "90-100 cm" ~ "b",
+      area == "tp1" & depth == "100-110 cm" ~ "b",
+      area == "tp1" & depth == "110-120 cm" ~ "b",
+      area == "tp1" & depth == "120-130 cm" ~ "b",
+      area == "tp1" & depth == "120-140 cm" ~ "b",
       area == "d1" & depth == "0-20 cm" ~ "c",
       area == "d1" & depth == "20-30 cm" ~ "c",
       area == "d1" & depth == "40-60 cm" ~ "a",
@@ -171,7 +171,53 @@ tl1 <- tl1 %>%
       area == "ta" & depth == "260-270 cm" ~ "d",
      
       TRUE ~ NA_character_
-  ))
+  )) %>% 
+  
+  mutate(
+ grouped_level = case_when(
+    area == "tp1" & depth == "0-10 cm" ~ "3",
+      area == "tp1" & depth == "0-20 cm" ~ "3",
+      area == "tp1" & depth == "10-30 cm" ~ "3",
+      area == "tp1" & depth == "10-90 cm" ~ "3",
+      area == "tp1" & depth == "20-30 cm" ~ "3",
+      area == "tp1" & depth == "30-40 cm" ~ "3",
+      area == "tp1" & depth == "40-50 cm" ~ "3",
+      area == "tp1" & depth == "50-100 cm" ~ "3",
+      area == "tp1" & depth == "50-60 cm" ~ "2",
+      area == "tp1" & depth == "50-70 cm" ~ "2",
+      area == "tp1" & depth == "80-90 cm" ~ "2",
+      area == "tp1" & depth == "90-100 cm" ~ "2",
+      area == "tp1" & depth == "100-110 cm" ~ "1",
+      area == "tp1" & depth == "110-120 cm" ~ "1",
+      area == "tp1" & depth == "120-130 cm" ~ "1",
+      area == "tp1" & depth == "120-140 cm" ~ "1",
+      area == "d1" & depth == "0-20 cm" ~ "3",
+      area == "d1" & depth == "20-30 cm" ~ "3",
+      area == "d1" & depth == "40-60 cm" ~ "2",
+      area == "d1" & depth == "50-60 cm" ~ "2",
+      area == "d1" & depth == "60-70 cm" ~ "1",
+      area == "d1" & depth == "70-80 cm" ~ "1",
+      area == "ta" & depth == "0-30 cm" ~ "6",
+      area == "ta" & depth == "30-40 cm" ~ "6",
+      area == "ta" & depth == "40-50 cm" ~ "5",
+      area == "ta" & depth == "50-60 cm" ~ "5",
+      area == "ta" & depth == "60-70 cm" ~ "5",
+      area == "ta" & depth == "70-120 cm" ~ "4",
+      area == "ta" & depth == "120-150 cm" ~ "4",
+      area == "ta" & depth == "150-180 cm" ~ "3",
+      area == "ta" & depth == "180-190 cm" ~ "3",
+      area == "ta" & depth == "190-200 cm" ~ "2",
+      area == "ta" & depth == "200-210 cm" ~ "2",
+      area == "ta" & depth == "210-220 cm" ~ "2",
+      area == "ta" & depth == "220-230 cm" ~ "2",
+      area == "ta" & depth == "230-240 cm" ~ "2",
+      area == "ta" & depth == "230-250 cm" ~ "1",
+      area == "ta" & depth == "250-260 cm" ~ "1",
+      area == "ta" & depth == "260-270 cm" ~ "1",
+
+TRUE ~ NA_character_
+  )
+)
 
 
 # Remove specific columns
@@ -197,11 +243,11 @@ ggplot() +
 
 p2 <- 
 tl1 %>% 
-  group_by(layer) %>% 
+  group_by(chronological_unit) %>% 
   tally() %>% 
-  drop_na(layer) %>% 
+  drop_na(chronological_unit) %>% 
 ggplot() + 
-  aes(layer, n) +
+  aes(chronological_unit, n) +
   geom_col()
 
 plot_grid(p1, p2, ncol = 1)
@@ -350,7 +396,7 @@ tl3 <- tl3 %>%
 # BM: better to remove them by their ID than by row number, since row number can easily change, but ID cannot
 
 tl3 <- tl3 %>% 
-  filter(!lithic_id %in% c("3154", "1741", "1680"))
+  filter(!lithic_id %in% c("3154", "1741", "1680", "طبیعی"))
 ```
 
 ```{r}
@@ -1065,13 +1111,15 @@ tl_final <- tl4 %>%
    `platform length` =    `platform Length (mm)`, 
     eraillure =            Eraillure , 
     cortex =               `Cortex (%)`)  %>%
-  mutate(al = paste0(toupper(area), "_", layer)) %>%
-  relocate(al, .after = layer)   %>%
+  mutate(area_unit = paste0(toupper(area), "_", chronological_unit)) %>%
+  relocate(area_unit, .after = chronological_unit)   %>%
+  relocate(grouped_level, .after = area_unit)   %>%
   select(lithic_id, 
          TA, 
          area, 
-         layer,
-         al,
+         chronological_unit,
+         area_unit,
+         grouped_level,
          cortex,
          depth, upper, lower, midpoint, 
         `length`, `width`, `thickness`, 
@@ -1458,12 +1506,12 @@ knitr::kable(summary_table_area_filtered,
 
 ```
 
-### Summary tables: LAYER
+### Summary tables: chronological unit
 
 ```{r}
 # Create a summary table
-summary_table_layer <- tl_final %>%
-  group_by(layer) %>% 
+summary_table_unit <- tl_final %>%
+  group_by(chronological_unit) %>% 
   summarise(
     `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
@@ -1479,18 +1527,18 @@ summary_table_layer <- tl_final %>%
 
 ```{r}
 # Generate the table
-kable(summary_table_layer, 
-      caption = "Summary of lithics by Layer", 
+kable(summary_table_unit, 
+      caption = "Summary of lithics by Chronological Units", 
       align = 'c') 
 
 ```
 
-### Summary tables: AREA-LAYER:
+### Summary tables: AREA-UNIT:
 
 ```{r}
-# Create a summary table based on the 'al' column
-summary_table_al <- tl_final %>%
-  group_by(al) %>%  
+# Create a summary table based on the 'area_unit' column
+summary_table_au <- tl_final %>%
+  group_by(area_unit) %>%  
   summarise(
     `Cores (n)` = sum(!is.na(core)),  
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
@@ -1508,7 +1556,7 @@ summary_table_al <- tl_final %>%
 # Generate the table
 
 kable(summary_table_al, 
-      caption = "Summary of lithics by Area and layer") 
+      caption = "Summary of lithics by Area and chronological unit") 
 
 ```
 
@@ -1546,7 +1594,7 @@ summary_table_area <- summary_table_area %>%
     retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
     utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
     shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
-    total =                    sum(.$total, na.rm = TRUE)  # Explicitly setting the total
+   
   )
 
 # Adding a new row with total counts
@@ -1569,10 +1617,10 @@ summary_table_area <- summary_table_area %>%
 ```
 
 ```{r}
-# Prepare data for Summary table-area_layer(al)
-summary_table_al <- tl_final %>%
+# Prepare data for Summary table-area_unit(au)
+summary_table_au <- tl_final %>%
   filter(area %in% c("ta", "d1", "tp1")) %>% 
-  group_by(al) %>% 
+  group_by(area_unit) %>% 
   summarise(
     blade_count = sum(blank == "blade", na.rm = TRUE),
     flake_count = sum(blank == "flake", na.rm = TRUE),
@@ -1589,7 +1637,7 @@ summary_table_al <- tl_final %>%
 # Adding a new row with total counts
 summary_table_al <- summary_table_al %>% 
   add_row(
-    al = "Total",
+    area_unit = "Total",
     blade_count =              sum(.$blade_count, na.rm = TRUE),
     flake_count =              sum(.$flake_count, na.rm = TRUE),
     bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
@@ -1619,12 +1667,12 @@ summary_table_tooltype <- tl_final %>%
 # generate a table
 
 summary_table_al <- summary_table_al %>%
-  filter(!(al %in% c("D1_NA", "TP1_NA")))
+  filter(!(area_unit %in% c("D1_NA", "TP1_NA")))
 
 kable(
   summary_table_al,
   col.names = c(
-    "Area-Layer",
+    "Area-unit",
     "Blade",
     "Flake",
     "Bladelet",
@@ -1675,10 +1723,10 @@ kable(
 ```
 
 ```{r}
-# Create the summary table based on layer
-summary_table1_layer <- tl_final %>%
+# Create the summary table based on chronological_unit
+summary_table1_unit <- tl_final %>%
   filter(area %in% c("ta", "d1", "tp1")) %>%
-  group_by(layer) %>%
+  group_by(chronological_unit) %>%
   summarise(
     numb_retouched = sum(retouch == 1, na.rm = TRUE),
     numb_cores = sum(!is.na(`core-typology`), na.rm = TRUE),
@@ -1689,12 +1737,12 @@ summary_table1_layer <- tl_final %>%
 ```
 
 ```{r}
-# Create a summary table based on the 'depth', 'area', and 'layer' columns
+# Create a summary table based on the 'depth', 'area', and 'chronological unit' columns
 tl_final <- tl_final %>%
   mutate(depth = gsub("cm", "", depth))
 
-summary_table_depth_area_layer <- tl_final %>%
-  group_by(TA, depth, area, layer, upper, lower) %>%  
+summary_table_depth_area_unit <- tl_final %>%
+  group_by(TA, depth, area, chronological_unit, grouped_level, upper, lower) %>%  
   summarise(
     `Cores (n)` = sum(!is.na(core)),  
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
@@ -1706,12 +1754,12 @@ summary_table_depth_area_layer <- tl_final %>%
     `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
   )
 
-summary_table_depth_area_layer_to_join <- 
-  summary_table_depth_area_layer
+summary_table_depth_area_unit_to_join <- 
+  summary_table_depth_area_unit
 
 # Generate the table
-kable(summary_table_depth_area_layer, 
-      caption = "Summary of lithics by Depth, Area, and Layer")
+kable(summary_table_depth_area_unit, 
+      caption = "Summary of lithics by Depth, Area, and Chronological Unit")
 ```
 
 ```{r}
@@ -1721,25 +1769,25 @@ summary_table_depth_tool_type <- tl_final %>%
   summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE), .groups = 'drop')
 
 # Create a full summary table by joining it back to the original summary table based on 'depth' and 'area'
-summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
   left_join(summary_table_depth_tool_type, by = c("area", "depth"))
 
 # Remove the existing 'tool_type' if it exists
-if ("tool_type" %in% names(summary_table_depth_area_layer)) {
-  summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+if ("tool_type" %in% names(summary_table_depth_area_unit)) {
+  summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
     select(-tool_type)
 }
 
 # Join again based on 'depth', this time being specific about what we want
-summary_table_depth_area_layer <- 
-  summary_table_depth_area_layer %>%
+summary_table_depth_area_unit <- 
+  summary_table_depth_area_unit %>%
   left_join(summary_table_depth_tool_type %>% select(depth, tool_type), 
             by = "depth")
 
 # Generate the table
 
-kable(summary_table_depth_area_layer, 
-      caption = "Summary of lithics by Depth, Area, and Layer")
+kable(summary_table_depth_area_unit, 
+      caption = "Summary of lithics by Depth, Area, and chronological unit")
 
 
 ```
@@ -1751,7 +1799,8 @@ desired_columns <-
     "TA",
     "depth",
     "area",
-    "layer",
+    "chronological_unit",
+    "grouped_level",
     "upper",
     "lower",
     "Cores (n)",
@@ -1763,15 +1812,15 @@ desired_columns <-
     "Utilized (n)",
     "Sickle Shine (n)",
     "tool_type"
-  )  # Only keep this 'tool_type'
+  ) 
 
 # Filter the tl_final dataframe
-summary_table_depth_area_layer <- summary_table_depth_area_layer %>%
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
   filter(area %in% c('ta', 'd1', 'tp1'))
 
 # Generate the table
-kable(summary_table_depth_area_layer, 
-      caption = "Summary of lithics by Depth, Area, and Layer")
+kable(summary_table_depth_area_unit, 
+      caption = "Summary of lithics by Depth, Area, and chronological_unit")
 ```
 
 ```{r}
@@ -1783,15 +1832,15 @@ depths_divided_tbl <-
                            nrow(.)/2))
 
 # google sheet has 42 rows, and cols for 
-# area, layer, level, depth. What is the equivalent above? tp1_c_3_a
+# area, chronological_unit, level, depth. What is the equivalent above? tp1_c_3_a
 
 # This 'depths_divided_tbl' needs more information, for example, some depth ranges 
 
 # join with lithic data that 
-summary_table_depth_area_layer_to_join %>% 
+summary_table_depth_area_unit_to_join %>% 
   left_join(depths_divided_tbl) %>% 
   mutate(label = paste(area, 
-                       layer, 
+                       chronological_unit, 
                        # level, # need this
                        division_id,
                        sep = "_")) %>% View
@@ -1801,7 +1850,7 @@ summary_table_depth_area_layer_to_join %>%
 ```{r}
 #| eval: false
 
-# Here, I've imported the table 'Summary by Depth, Area, Layer' into Google Sheets for easier management.
+# Here, I've imported the table 'Summary by Depth, Area, chronological_unit' into Google Sheets for easier management.
 #I thought this format would simplify the process of those depths needed to be splitting up.
 
 # BM: looks like you need this data starting from around here in the document
@@ -1814,7 +1863,7 @@ sum_depth_sheet <- read_sheet(google_sheet_url)
 
 # Create the 'label' column
 sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(label = paste(area, layer, level, sep = "_"))
+  mutate(label = paste(area, chronological_unit, grouped_level, sep = "_"))
 
 # Add a suffix only to duplicates
 sum_depth_sheet <- sum_depth_sheet %>%
@@ -1879,6 +1928,67 @@ sum_depth_sheet <- sum_depth_sheet %>%
   )
 
 ```
+
+
+#try with summary_table_depth_area_unit
+```{r}
+# Create the 'label' column
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  mutate(label = paste(area, chronological_unit, grouped_level, sep = "_"))
+
+# Add a suffix only to duplicates
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  group_by(label) %>%
+  mutate(suffix = case_when(
+    n() == 1 ~ NA_character_,
+    TRUE ~ letters[row_number()]
+  )) %>%
+  ungroup()
+
+
+
+# Append the suffix to 'label'
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  mutate(label = if_else(is.na(suffix), label, paste0(label, "_", suffix))) %>%
+  select(-suffix)
+
+# Relocate 'label' column after 'level'
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  relocate(label, .after = grouped_level)
+
+
+------------------------------------------
+# working up to here. I need to add length, width, and thickness columns
+------------------------------------------
+
+# Separate `excavation area` into `length` and `width` and calculate `volume`
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  separate(`excavation area`, into = c("length", "width"), sep = "\\*") %>%
+  mutate(
+    length = as.numeric(length),
+    width = as.numeric(width),
+    `thickness` = `thickness` / 100  # Convert from cm to m
+  ) %>%
+  mutate(
+    volume = length * width * `thickness`  # Calculate volume in m^3
+  )
+
+
+# Calculate lithic volumetric density 
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  mutate(
+    `lithic_dens` = round(total_lithics / volume, 2)
+  )
+
+# Calculate retouch frequency 
+summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
+  mutate(
+    retouch_freq = round(retouch_tool / volume, 2)  
+  )
+```
+
+
+
 
 ```{r}
 library(ggpmisc)
