@@ -2,7 +2,7 @@
 # Research compendium for "Title of this paper""
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/SetarehShafizadeh/Tulai/actions/workflows/render-in-docker.yaml/badge.svg)](https://github.com/SetarehShafizadeh/Tulai/actions/workflows/render-in-docker.yaml)
+[![Docker build status](https://github.com/SetarehShafizadeh/Tulai/workflows/.github/workflows/render-in-docker.yaml/badge.svg)](https://github.com/SetarehShafizadeh/Tulai/actions)
 <!-- badges: end -->
 
 This repository contains the data and code for our paper. Our pre-print is online here:
