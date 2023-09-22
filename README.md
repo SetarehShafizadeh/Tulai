@@ -1,5 +1,5 @@
 
-# Research compendium for "Title of this paper""
+# Research compendium for "Title of this paper"
 
 <!-- badges: start -->
 [![Docker build status](https://github.com/SetarehShafizadeh/Tulai/workflows/.github/workflows/render-in-docker.yaml/badge.svg)](https://github.com/SetarehShafizadeh/Tulai/actions)
