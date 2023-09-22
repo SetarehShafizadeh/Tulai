@@ -46,12 +46,6 @@ sum_depth_sheet$label
 
 summary_table_depth_area_unit$label
 
-
-
-
-
-
-
 #---------------------------------------------------------------
 
 # import table with depths that we have subdivided
@@ -183,15 +177,6 @@ summary_table2_area <- summary_table2_area %>%
 
 print(summary_table2_area)
 
-```
-
-
-
-
-
-
-
-```{r}
 
 
 ##### DO NOT RUN ######
@@ -220,8 +205,6 @@ density_data_layer <- data.frame(
 summary_table2_layer <- merge(summary_table2_layer, density_data_layer, by = "layer")
 
 
-
-```
 
 # regression plot-area
 
