@@ -9,7 +9,6 @@ execute:
   warning: false
   fig-dpi: 600
 title-block-published: "last updated"
-editor: visual
 ---
 
 ```{r}
@@ -23,11 +22,21 @@ library(cowplot)
 library(knitr)
 ```
 
-Cleaning Data:
+Import the data
 
 ```{r}
 # Read the data
 tl <- read_csv(here("data/Tulai_Lithic_Assamblage.csv"))
+
+# this file is prepared from the google sheet here
+# https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
+# and simplified using code in the scraps.R file
+excavation_data <- read_csv(here("data/excavation_data.csv"))
+```
+
+Clean the data
+
+```{r}
 
 # Create a new data frame with renamed columns
 tl1 <- tl
@@ -116,9 +125,6 @@ tl1 <- tl1 %>%
              
              TRUE ~ as.character(depth)
   )) %>% 
-  
-  
-  
   separate(depth, 
            into = c("upper",
                     "lower"),
@@ -218,7 +224,6 @@ tl1 <- tl1 %>%
 TRUE ~ NA_character_
   )
 )
-
 
 # Remove specific columns
 tl1 %>% 
@@ -1299,9 +1304,16 @@ tl_final <- tl_final %>%
 ```{r}
 
 # Define the patterns to search for
-patterns <- c("denticulate-notch", "retouched piece", "scraper",
-              "Perforator", "serrated scraper", "backed pieces",
-              "truncated pieces", "burin", "geometric", "scraper-notch",
+patterns <- c("denticulate-notch", 
+              "retouched piece", 
+              "scraper",
+              "Perforator", 
+              "serrated scraper", 
+              "backed pieces",
+              "truncated pieces", 
+              "burin", 
+              "geometric", 
+              "scraper-notch",
               "microburin")
 
 # Update the `retouch` column based on the `tooltypegroup` column
@@ -1468,7 +1480,9 @@ tl_final <- tl_final %>%
 # rev(sort(table(tl_final$blank)))
 ```
 
-### Summary tables: AREA
+### Summary tables of the lithic assemblages
+
+#### Basic typological classes by excavation area
 
 ```{r}
 # Create a summary table
@@ -1486,207 +1500,21 @@ summary_table_area <- tl_final %>%
     `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
   )
 
-
-# SS: we mainly consider ta, tp1, and d1.
-knitr::kable(summary_table_area,
-             caption = "Summary of lithics in all areas")
-```
-
-```{r}
-
 # Filter the data to include only the areas 'ta', 'd1', and 'tp1'
 tl_final_area <- tl_final %>%
   filter(area %in% c("ta", "d1", "tp1"))
 
-summary_table_area_filtered <- summary_table_area %>%
-  filter(area %in% c("ta", "d1", "tp1"))
+summary_table_area_filtered <- 
+  summary_table_area %>%
+  filter(area %in% c("ta", "d1", "tp1")) 
 
+# BM: this is table 1 in the manuscript
 knitr::kable(summary_table_area_filtered,
              caption = "Summary of lithics in the main areas")
 
 ```
 
-### Summary tables: chronological unit
-
-```{r}
-# Create a summary table
-summary_table_unit <- tl_final %>%
-  group_by(chronological_unit) %>% 
-  summarise(
-    `Cores (n)` = sum(!is.na(core)),  # Count non-NA core entries
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  # Count non-NA corefrag entries
-    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
-    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
-    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
-    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
-    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
-    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
-  )
-
-```
-
-```{r}
-# Generate the table
-kable(summary_table_unit, 
-      caption = "Summary of lithics by Chronological Units", 
-      align = 'c') 
-
-```
-
-### Summary tables: AREA-UNIT:
-
-```{r}
-# Create a summary table based on the 'area_unit' column
-summary_table_au <- tl_final %>%
-  group_by(area_unit) %>%  
-  summarise(
-    `Cores (n)` = sum(!is.na(core)),  
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
-    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
-    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
-    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
-    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
-    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
-    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
-  )
-
-```
-
-```{r}
-# Generate the table
-
-kable(summary_table_al, 
-      caption = "Summary of lithics by Area and chronological unit") 
-
-```
-
-### Summary tables: Techno-Typology
-
-```{r}
-
-# Prepare data for Summary table-area
-summary_table_area <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  group_by(area) %>%
-  summarise(
-    blade_count = sum(blank == "blade", na.rm = TRUE),
-    flake_count = sum(blank == "flake", na.rm = TRUE),
-    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
-    tool_count = sum(retouch == 1, na.rm = TRUE) + sum(utilization == 1, na.rm = TRUE),
-    core_count = sum(!is.na(`core-typology`), na.rm = TRUE),
-    core_rejuvenation_count = sum(!is.na(`corefrag`), na.rm = TRUE),
-    retouched_tool_count = sum(retouch == 1, na.rm = TRUE),
-    utilized_tool_count = sum(utilization == 1, na.rm = TRUE),
-    shine_tool_count = sum(`sickle shine` == 1, na.rm = TRUE),
-    total = n()
-  )
-
-
-summary_table_area <- summary_table_area %>%
-  add_row(
-    area = "Total",
-    blade_count =              sum(.$blade_count, na.rm = TRUE),
-    flake_count =              sum(.$flake_count, na.rm = TRUE),
-    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
-    tool_count =               sum(.$tool_count, na.rm = TRUE),
-    core_count =               sum(.$core_count, na.rm = TRUE),
-    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
-    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
-    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
-    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
-   
-  )
-
-# Adding a new row with total counts
-summary_table_area <- summary_table_area %>%
-  add_row(
-    area = "Total",
-    blade_count =              sum(.$blade_count, na.rm = TRUE),
-    flake_count =              sum(.$flake_count, na.rm = TRUE),
-    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
-    tool_count =               sum(.$tool_count, na.rm = TRUE),
-    core_count =               sum(.$core_count, na.rm = TRUE),
-    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
-    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
-    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
-    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
-    total =                    sum(.$total, na.rm = TRUE)  # Explicitly setting the total
-  )
-
-
-```
-
-```{r}
-# Prepare data for Summary table-area_unit(au)
-summary_table_au <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>% 
-  group_by(area_unit) %>% 
-  summarise(
-    blade_count = sum(blank == "blade", na.rm = TRUE),
-    flake_count = sum(blank == "flake", na.rm = TRUE),
-    bladelet_count = sum(blank == "bladelet", na.rm = TRUE),
-    tool_count = sum(retouch == 1, na.rm = TRUE) + sum(utilization == 1, na.rm = TRUE),
-    core_count = sum(!is.na(`core-typology`), na.rm = TRUE),
-    core_rejuvenation_count = sum(!is.na(`corefrag`), na.rm = TRUE),
-    retouched_tool_count = sum(retouch == 1, na.rm = TRUE),
-    utilized_tool_count = sum(utilization == 1, na.rm = TRUE),
-    shine_tool_count = sum(`sickle shine` == 1, na.rm = TRUE),
-    total = n()
-  )
-
-# Adding a new row with total counts
-summary_table_al <- summary_table_al %>% 
-  add_row(
-    area_unit = "Total",
-    blade_count =              sum(.$blade_count, na.rm = TRUE),
-    flake_count =              sum(.$flake_count, na.rm = TRUE),
-    bladelet_count =           sum(.$bladelet_count, na.rm = TRUE),
-    tool_count =               sum(.$tool_count, na.rm = TRUE),
-    core_count =               sum(.$core_count, na.rm = TRUE),
-    core_rejuvenation_count =  sum(.$core_rejuvenation_count, na.rm = TRUE),
-    retouched_tool_count =     sum(.$retouched_tool_count, na.rm = TRUE),
-    utilized_tool_count =      sum(.$utilized_tool_count, na.rm = TRUE),
-    shine_tool_count =         sum(.$shine_tool_count, na.rm = TRUE),
-    total =                    sum(.$total, na.rm = TRUE)  
-  )
-
-# rev(sort(table(tl_final$tooltypegroup)))
-```
-
-```{r}
-#explore tool type group
-
-summary_table_tooltype <- tl_final %>%
-  filter(tooltypegroup != 'utilized tool') %>%  # Exclude 'utilized tool'
-  group_by(tooltypegroup) %>% 
-  summarise(
-  )
-```
-
-```{r}
-# generate a table
-
-summary_table_al <- summary_table_al %>%
-  filter(!(area_unit %in% c("D1_NA", "TP1_NA")))
-
-kable(
-  summary_table_al,
-  col.names = c(
-    "Area-unit",
-    "Blade",
-    "Flake",
-    "Bladelet",
-    "Tools",
-    "Cores",
-    "Core Rejuvenations",
-    "Retouched Tools",
-    "Utilized Tools",
-    "Sickle Shine",
-    "Total"
-  ),
-  caption = "Summary of lithics by techno-typological classification")
-
-```
+#### Techno-typological classes by excavation area
 
 ```{r}
 # Create a summary table for typology based on area
@@ -1697,7 +1525,9 @@ summary_table_tool_area <- tl_final %>%
   group_by(area, tooltypegroup) %>%  # Group the data by area and tooltypegroup
   tally() %>%  # Count the number of rows in each group
   arrange(area, tooltypegroup) %>%  # Arrange by area and tooltypegroup
-  spread(key = area, value = n, fill = 0)  # Spread the 'area' column into multiple columns
+  spread(key = area, 
+         value = n, 
+         fill = 0)  # Spread the 'area' column into multiple columns
 
 # Add a "Total" column that sums each row
 summary_table_tool_area <- summary_table_tool_area %>%
@@ -1722,299 +1552,136 @@ kable(
 
 ```
 
-```{r}
-# Create the summary table based on chronological_unit
-summary_table1_unit <- tl_final %>%
-  filter(area %in% c("ta", "d1", "tp1")) %>%
-  group_by(chronological_unit) %>%
-  summarise(
-    numb_retouched = sum(retouch == 1, na.rm = TRUE),
-    numb_cores = sum(!is.na(`core-typology`), na.rm = TRUE),
-    total_lithics = n(),
-    percent_retouch = round((numb_retouched / total_lithics) * 100, 2)
-  )
-
-```
+### Combine lithic data with excavation data to prepare for WABI
 
 ```{r}
-# Create a summary table based on the 'depth', 'area', and 'chronological unit' columns
-tl_final <- tl_final %>%
-  mutate(depth = gsub("cm", "", depth))
-
-summary_table_depth_area_unit <- tl_final %>%
-  group_by(TA, depth, area, chronological_unit, grouped_level, upper, lower) %>%  
-  summarise(
-    `Cores (n)` = sum(!is.na(core)),  
-    `Core rejuvenations pieces (n)` = sum(!is.na(corefrag)),  
-    `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
-    `Flake (n)` = sum(blank == "flake", na.rm = TRUE),
-    `Bladelet (n)` = sum(blank == "bladelet", na.rm = TRUE),
-    `Retouched Tools (n)` = sum(retouch == 1, na.rm = TRUE),
-    `Utilized (n)` = sum(utilization == 1, na.rm = TRUE),
-    `Sickle Shine (n)` = sum(`sickle shine` == 1, na.rm = TRUE)
-  )
-
-summary_table_depth_area_unit_to_join <- 
-  summary_table_depth_area_unit
-
-# Generate the table
-kable(summary_table_depth_area_unit, 
-      caption = "Summary of lithics by Depth, Area, and Chronological Unit")
-```
-
-```{r}
-# Generate a summary table by grouping by 'depth' and 'area'
-summary_table_depth_tool_type <- tl_final %>%
-  group_by(area, depth) %>%
-  summarise(tool_type = n_distinct(tooltypegroup, na.rm = TRUE), .groups = 'drop')
-
-# Create a full summary table by joining it back to the original summary table based on 'depth' and 'area'
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  left_join(summary_table_depth_tool_type, by = c("area", "depth"))
-
-# Remove the existing 'tool_type' if it exists
-if ("tool_type" %in% names(summary_table_depth_area_unit)) {
-  summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-    select(-tool_type)
-}
-
-# Join again based on 'depth', this time being specific about what we want
-summary_table_depth_area_unit <- 
-  summary_table_depth_area_unit %>%
-  left_join(summary_table_depth_tool_type %>% select(depth, tool_type), 
-            by = "depth")
-
-# Generate the table
-
-kable(summary_table_depth_area_unit, 
-      caption = "Summary of lithics by Depth, Area, and chronological unit")
-
-
-```
-
-```{r}
-# Specify the exact columns want to keep
-desired_columns <-
-  c(
-    "TA",
-    "depth",
-    "area",
-    "chronological_unit",
-    "grouped_level",
-    "upper",
-    "lower",
-    "Cores (n)",
-    "Core rejuvenations pieces (n)",
-    "Blade (n)",
-    "Flake (n)",
-    "Bladelet (n)",
-    "Retouched Tools (n)",
-    "Utilized (n)",
-    "Sickle Shine (n)",
-    "tool_type"
-  ) 
-
-# Filter the tl_final dataframe
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  filter(area %in% c('ta', 'd1', 'tp1'))
-
-# Generate the table
-kable(summary_table_depth_area_unit, 
-      caption = "Summary of lithics by Depth, Area, and chronological_unit")
-```
-
-```{r}
-
-# import table with depths that we have subdivided
-depths_divided_tbl <- 
-  read_csv(here("data/Lookup Table - Sheet1.csv")) %>% 
-  mutate(division_id = rep(c("a", "b"),
-                           nrow(.)/2))
-
-# google sheet has 42 rows, and cols for 
-# area, chronological_unit, level, depth. What is the equivalent above? tp1_c_3_a
-
-# This 'depths_divided_tbl' needs more information, for example, some depth ranges 
-
-# join with lithic data that 
-summary_table_depth_area_unit_to_join %>% 
-  left_join(depths_divided_tbl) %>% 
-  mutate(label = paste(area, 
+# Create the 'label' column
+tl_final_depth_area_unit <- 
+  tl_final %>%
+  mutate(label1 = paste(area, 
                        chronological_unit, 
-                       # level, # need this
-                       division_id,
-                       sep = "_")) %>% View
+                       grouped_level, 
+                       sep = "_")) %>% 
+  mutate(label2 = paste(area, 
+                       chronological_unit, 
+                       grouped_level, 
+                       upper,
+                       lower,
+                       sep = "_")) %>% 
+  # we don't care about lithics with missing and incomplete 
+  # excavation provenance, so drop those
+ filter(!str_detect(label1, "NA")) %>% 
+  # so we can join this column ok 
+  mutate(grouped_level = parse_number(grouped_level))
 
+# BM: For the individual lithic data, what area/chrono-unit/grouped level 
+# combinations do we have? We only want to match those with the 
+# excavation data that we can calclate volume with. 
+
+lithics_unique_labels <- 
+tl_final_depth_area_unit %>% 
+  pull(label2) %>% 
+  unique() %>% 
+  sort()
+
+# BM: prepare excavation data here
+excavation_data_volume <-
+  excavation_data %>% 
+  mutate(thickness_of_excavation_unit  = lower_depth - upper_depth) %>% 
+  mutate(excavation_volume = excavation_dimension_1 * 
+           excavation_dimension_2 * 
+           thickness_of_excavation_unit / 100) 
+
+# BM: for the WABI plot, we have our primary analytical unit as
+# excavation_area / chronological_unit / depth which is our label2
+# variable, each row in the excavation_data_volume table is a 
+# unique combination of excavation_area / chronological_unit / depth
+
+# BM: Now we subset the excavation data so we only look at the 
+# data that we need for the lithics, ie. we drop excavation data 
+# that has no corresponding lithics 
+
+tl_final_excavation_data_volume  <- 
+excavation_data_volume %>% 
+  filter(label2 %in% lithics_unique_labels) %>% 
+  # now we join the excavation data to the individual lithic records
+  right_join(tl_final_depth_area_unit)
+
+# get the counts of artefact types per ex-area/chrono-unit/depth
+
+tl_final_excavation_data_volume_artefact_counts <- 
+tl_final_excavation_data_volume %>% 
+  group_by(label2) %>% 
+   summarise(
+    blade_count =              sum(blank == "blade", na.rm = TRUE),
+    flake_count =              sum(blank == "flake", na.rm = TRUE),
+    bladelet_count =           sum(blank == "bladelet", na.rm = TRUE),
+    tool_count =               sum(retouch == 1, 
+                                   na.rm = TRUE) + sum(utilization == 1, 
+                                                       na.rm = TRUE),
+    core_count =               sum(!is.na(`core-typology`), na.rm = TRUE),
+    core_rejuvenation_count =  sum(!is.na(`corefrag`), 
+                                   na.rm = TRUE),
+    retouched_tool_count =     sum(retouch == 1, 
+                                   na.rm = TRUE),
+    utilized_tool_count =      sum(utilization == 1, 
+                                   na.rm = TRUE),
+    shine_tool_count =         sum(`sickle shine` == 1, 
+                                   na.rm = TRUE),
+    tool_type_count = n_distinct(tooltypegroup),
+    excavation_volume = unique(excavation_volume)
+    
+  ) %>% 
+ # BM:  "total lithics" is everything except sickle shine, 
+ # "retouch frequency" is retouched_tool_count / "total lithics"
+  rowwise() %>% 
+  mutate(total_lithics = sum(blade_count,
+                             flake_count,
+                             bladelet_count,
+                             tool_count,
+                             core_count,
+                             core_rejuvenation_count,
+                             retouched_tool_count,
+                             utilized_tool_count)) %>% 
+  mutate(retouch_frequency =  retouched_tool_count / total_lithics)
+
+# BM: get the total number of artefacts, number of retouched pieces, and 
+# artefact density. I think this gets us to something similar to the google
+# sheet, the values are not exact, but I have no way to check how how
+# calculated the values in the google sheet so 
+sum_depth_sheet <- 
+tl_final_excavation_data_volume_artefact_counts %>% 
+  # some ex-area/chrono-unit/depth have no volume, so drop those
+  drop_na(excavation_volume) %>% 
+  mutate(lithic_density = total_lithics / excavation_volume)
 ```
 
-```{r}
-#| eval: false
-
-# Here, I've imported the table 'Summary by Depth, Area, chronological_unit' into Google Sheets for easier management.
-#I thought this format would simplify the process of those depths needed to be splitting up.
-
-# BM: looks like you need this data starting from around here in the document
-
-library(googlesheets4)
-
-google_sheet_url <- 
-  "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
-sum_depth_sheet <- read_sheet(google_sheet_url)
-
-# Create the 'label' column
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(label = paste(area, chronological_unit, grouped_level, sep = "_"))
-
-# Add a suffix only to duplicates
-sum_depth_sheet <- sum_depth_sheet %>%
-  group_by(label) %>%
-  mutate(suffix = case_when(
-    n() == 1 ~ NA_character_,
-    TRUE ~ letters[row_number()]
-  )) %>%
-  ungroup()
-
-# Append the suffix to 'label'
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(label = if_else(is.na(suffix), label, paste0(label, "_", suffix))) %>%
-  select(-suffix)
-
-# Relocate 'label' column after 'level'
-sum_depth_sheet <- sum_depth_sheet %>%
-  relocate(label, .after = level)
-
-
-
-
-# BM: from my perspective, what would be ideal here is to have the 
-# excavation area and volume calculations done here in R. I feel anxious about
-# the possibilities of typos when these values are calculated somewhere I can't 
-# see and pasted into the google sheet. I prefer for the workflow of calculations
-# to be as transparent and traceable as possible. From this point in the qmd I
-# think we can use the volume values from this google sheet. Another option is to 
-# export the google sheet as a CSV, and put that in the data folder in this project. 
-# Then we can use read_csv to import it. 
-
-
-
-#SS: is that true?: (I have a weird number in row 5, cl Depth and couldn't find out what happened)
-
-
-#### previously I had a column'excavation area'; I seprated them in 2 columns in order to calculate the colume; but now when I wanted to run the code it said "! object 'excavation area' not found"; would it be OK to delete these lines? 
-
-# Separate `excavation area` into `length` and `width` and calculate `volume`
-sum_depth_sheet <- sum_depth_sheet %>%
-  separate(`excavation area`, into = c("length", "width"), sep = "\\*") %>%
-  mutate(
-    length = as.numeric(length),
-    width = as.numeric(width),
-    `thickness` = `thickness` / 100  # Convert from cm to m
-  ) %>%
-  mutate(
-    volume = length * width * `thickness`  # Calculate volume in m^3
-  )
-
-
-# Calculate lithic volumetric density 
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(
-    `lithic_dens` = round(total_lithics / volume, 2)
-  )
-
-# Calculate retouch frequency 
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(
-    retouch_freq = round(retouch_tool / volume, 2)  
-  )
-
-```
-
-
-#try with summary_table_depth_area_unit
-```{r}
-# Create the 'label' column
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  mutate(label = paste(area, chronological_unit, grouped_level, sep = "_"))
-
-# Add a suffix only to duplicates
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  group_by(label) %>%
-  mutate(suffix = case_when(
-    n() == 1 ~ NA_character_,
-    TRUE ~ letters[row_number()]
-  )) %>%
-  ungroup()
-
-
-
-# Append the suffix to 'label'
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  mutate(label = if_else(is.na(suffix), label, paste0(label, "_", suffix))) %>%
-  select(-suffix)
-
-# Relocate 'label' column after 'level'
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  relocate(label, .after = grouped_level)
-
-
-------------------------------------------
-# working up to here. I need to add length, width, and thickness columns
-------------------------------------------
-
-# Separate `excavation area` into `length` and `width` and calculate `volume`
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  separate(`excavation area`, into = c("length", "width"), sep = "\\*") %>%
-  mutate(
-    length = as.numeric(length),
-    width = as.numeric(width),
-    `thickness` = `thickness` / 100  # Convert from cm to m
-  ) %>%
-  mutate(
-    volume = length * width * `thickness`  # Calculate volume in m^3
-  )
-
-
-# Calculate lithic volumetric density 
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  mutate(
-    `lithic_dens` = round(total_lithics / volume, 2)
-  )
-
-# Calculate retouch frequency 
-summary_table_depth_area_unit <- summary_table_depth_area_unit %>%
-  mutate(
-    retouch_freq = round(retouch_tool / volume, 2)  
-  )
-```
-
-
-
+### Plot the WABI
 
 ```{r}
+#| label: fig-wabi
+#| fig-cap: "Relationship between Retouch Frequency and Lithic Volumetric Density"
+
 library(ggpmisc)
+library(ggrepel)
 
 # Create the plot: WABI_Level_logscale
 # here I do not consider those levels with a value 0 of retouch frequency. 
-filtered_data <- sum_depth_sheet %>% 
-  filter(lithic_dens > 0 & retouch_freq > 0)
-
-
-
+filtered_data <- 
+  sum_depth_sheet %>% 
+  filter(lithic_density > 0 & retouch_frequency > 0)
 
 WABI_Level <- ggplot(filtered_data,  
-            aes(x = lithic_dens,
-                y = retouch_freq)) +
-  geom_point(color = "black", size = 1.5) +
+            aes(x = lithic_density,
+                y = retouch_frequency)) +
+  geom_point(color = "black", 
+             size = 1.5) +
   geom_smooth(method = "lm", 
               se = TRUE, 
               color = "blue", 
               linewidth = 0.5) +
   # Add text labels based on 'label' column
-  geom_text(aes(label = label), 
-            vjust = 1.5, 
-            hjust = 0.5, 
-            check_overlap = TRUE) +
-  
+  geom_text_repel(aes(label = label2)) +
   stat_poly_eq(aes(label = paste(stat(eq.label), 
                                   stat(rr.label), 
                                   stat(p.value.label), 
@@ -2023,7 +1690,6 @@ WABI_Level <- ggplot(filtered_data,
                parse = TRUE, 
                size = 4) +
   labs(
-    title = "Relationship between Retouch Frequency and Lithic Volumetric Density",
     x = "Lithic Volumetric Density",
     y = "Retouch Frequency"
   ) +
@@ -2036,77 +1702,70 @@ WABI_Level <- ggplot(filtered_data,
   )
 
 # Print the plot to display it
-print(WABI_Level)
+WABI_Level
 
 ```
 
-```{r}
-#PCA_Level: preparing data
-
-#PCA_level: for PCA Bicho and Cascalheira considered these variables: estimated area (as we calculated based on levels, should I consider the thickness?), core frequency, blank frequency, chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), retouch frequency, tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index); 
-  ##core frequency
-  ##blank frequency
-  ##retouch frequency
-  ##tool diversity
-  ##thickness of deposit (???)
-  ##lithic density
-
-
-
-#Calculate Core Frequency
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(
-    core_freq = round(cores / volume, 2)  
-  )
-
-# calculate Blank Frequency
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(
-    blank_freq = round((flake + blade + bladelet) / volume, 2)  
-  )
-
-# Calculate tool diversity using Menhinick's index
-sum_depth_sheet <- sum_depth_sheet %>%
-  mutate(
-    total_tools = retouch_tool + utilized + sickle_shine,
-    tool_diversity = ifelse(total_tools > 0, n_distinct(tool_type) / sqrt(total_tools), NA)
-  )
-
-```
+### Compute PCA
 
 ```{r}
-# performin PCA
+# PCA_Level: preparing data
+
+# PCA_level: for PCA Bicho and Cascalheira considered these variables: 
+# - estimated area (as we calculated based on levels, should I consider the thickness?),
+# - core frequency: core_count / total_lithics
+# - blank frequency: (flake + blade + bladelet) / total_lithics
+# - chip frequency: artefacts smaller than 1 cm (as we work on a neolithic asssemblage, we have so many small artefacts; so, I do not consider it), 
+# - feature frequency (we have some stone alignments, but we do not know the exact level, we know the area of those features), 
+# - retouch frequency: retouch_frequency
+# - tool diversity (diversity of tool types within each assemblage, calculated using Menhinick’s index) BM: tool diversity from B & C: "calculated using the Menhinick’s index in which the number of tool types represented is divided by the square root of the total number of retouched tool". 
+
+
+sum_depth_sheet_for_pca <- 
+ sum_depth_sheet %>%
+  mutate(
+      core_frequency = core_count / total_lithics,
+      blank_frequency = (flake_count + blade_count + bladelet_count) / total_lithics,
+      total_tools = retouched_tool_count + utilized_tool_count + shine_tool_count,
+    # Calculate tool diversity using Menhinick's index
+      tool_diversity = tool_type_count / sqrt(total_tools)) %>% 
+   # drop rows that have no tools 
+  filter(total_tools != 0)
+
+# performing PCA
 
 library(FactoMineR)
 library(factoextra)
 
 sum_depth_sheet_subset <- 
- sum_depth_sheet %>%
+ sum_depth_sheet_for_pca %>%
   drop_na(tool_diversity) #%>% 
-  #filter(!label %in% c("tp1_c_3_a",
- #                      "d1_a_2_b",
+  # filter(!label %in% c("tp1_c_3_a",
+  #                      "d1_a_2_b",
   #                     "d1_c_3_b"))
 
 pca_data <- 
 sum_depth_sheet_subset %>% 
-  select(lithic_dens, 
-         core_freq, 
-         blank_freq, 
-         retouch_freq, 
+  select(lithic_density, 
+         core_frequency, 
+         blank_frequency, 
+         retouch_frequency, 
          tool_diversity)   
  
 # Perform PCA
 res.pca <- PCA(pca_data, graph = FALSE)
 
 # View the summary results
-summary(res.pca)
-
+# summary(res.pca)
 ```
 
 ```{r}
-#Plot: Contribution of variables for each of the four relevant PCA dimensions
+#| label: pca-contrib
+#| fig-cap: "PCA contribution plots"
+#| fig-height: 10
 
-#save contribution plots into one objects
+# Plot: Contribution of variables for each of the four relevant PCA dimensions
+# save contribution plots into one objects
 
 contribution_plots <- 
 map(1:5, ~fviz_contrib(res.pca, 
@@ -2118,50 +1777,6 @@ map(1:5, ~fviz_contrib(res.pca,
 library(cowplot)
 plot_grid(plotlist = contribution_plots,
                    ncol = 2)
-
-
-```
-
-```{r}
-# Extract contributions of variables to each principal component
-contributions <- res.pca$var$contrib
-
-# Compute average contribution for each dimension
-avg_contrib_dim1 <- mean(contributions[,1], na.rm = TRUE)
-avg_contrib_dim2 <- mean(contributions[,2], na.rm = TRUE)
-avg_contrib_dim3 <- mean(contributions[,3], na.rm = TRUE)
-avg_contrib_dim4 <- mean(contributions[,4], na.rm = TRUE)
-avg_contrib_dim5 <- mean(contributions[,5], na.rm = TRUE)
-
-# Find variables that contribute more than average to each dimension
-high_contrib_dim1 <- contributions[contributions[,1] > avg_contrib_dim1, 1]
-high_contrib_dim2 <- contributions[contributions[,2] > avg_contrib_dim2, 2]
-high_contrib_dim3 <- contributions[contributions[,3] > avg_contrib_dim3, 3]
-high_contrib_dim4 <- contributions[contributions[,4] > avg_contrib_dim4, 4]
-high_contrib_dim5 <- contributions[contributions[,5] > avg_contrib_dim4, 5]
-
-# Sort them in descending order
-sorted_high_contrib_dim1 <- sort(high_contrib_dim1, decreasing = TRUE)
-sorted_high_contrib_dim2 <- sort(high_contrib_dim2, decreasing = TRUE)
-sorted_high_contrib_dim3 <- sort(high_contrib_dim3, decreasing = TRUE)
-sorted_high_contrib_dim4 <- sort(high_contrib_dim4, decreasing = TRUE)
-sorted_high_contrib_dim5 <- sort(high_contrib_dim5, decreasing = TRUE)
-
-# Print or use for further analysis
-print("Significant contributions to Dim1:")
-print(sorted_high_contrib_dim1)
-
-print("Significant contributions to Dim2:")
-print(sorted_high_contrib_dim2)
-
-print("Significant contributions to Dim3:")
-print(sorted_high_contrib_dim3)
-
-print("Significant contributions to Dim4:")
-print(sorted_high_contrib_dim4)
-
-print("Significant contributions to Dim5:")
-print(sorted_high_contrib_dim5)
 ```
 
 ```{r}
@@ -2171,60 +1786,53 @@ fviz_screeplot(res.pca)
 
 ```{r}
 # Inspect eigenvalues
-res.pca$eig
-```
 
-```{r}
 eigen_df <- data.frame(
-  eigenvalue = res.pca$eig[,1],
+   eigenvalue = res.pca$eig[,1],
   `percentage of variance` = res.pca$eig[,2],
   `cumulative percentage of variance` = res.pca$eig[,3]
 )
 
-```
-
-```{r}
-
 library(kableExtra)
-library(htmltools)
 
 # Create a new column named "Dimension"
 eigen_df$Dimension <- 
   paste("Dim", seq_len(nrow(eigen_df)), sep = "")
 
 # Re-order the columns based on the corrected names
-eigen_df <- eigen_df[, c("Dimension", "eigenvalue", "percentage.of.variance", "cumulative.percentage.of.variance")]
+eigen_df <- eigen_df[, c("Dimension", 
+                         "eigenvalue", 
+                         "percentage.of.variance",
+                         "cumulative.percentage.of.variance")]
 
 # Round the numerical columns to 3 decimal places
-eigen_df[, 2:4] <- round(eigen_df[, 2:4], 3)
+eigen_df[, 2:4] <- round(eigen_df[, 2:4], 2)
 
 # Removing row names
 rownames(eigen_df) <- NULL  
 
 # Creating the kable output
 kable_output <- kable(eigen_df, 
-                      "html", 
-                      align = 'c', 
                       col.names = c("Dimension", 
                                     "Eigenvalue", 
                                     "Variance Percent", 
-                                    "Cumulative Variance Percent")) %>%
-  kable_styling("striped", 
-                full_width = F) %>%
-  add_header_above(c(" " = 1, "Eigenvalues and percentage of variance for each dimension of PCA" = 3))
+                                    "Cumulative Variance Percent"),
+  caption = "Eigenvalues and percentage of variance for each dimension of PCA")
 
 # Display the table
 kable_output
-
-
-
-
 ```
 
 ```{r}
 library(ggrepel)
 
-rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label
+rownames(res.pca$ind$coord) <- 
+  sum_depth_sheet_subset$label2
+
+# get excavation area so we can use it for grouping
+excavation_area <- 
+  str_extract(sum_depth_sheet_subset$label2, 
+              "[^_]+")
 
 # Generate the base biplot
 biplot_base <- fviz_pca_biplot(res.pca,
@@ -2232,17 +1840,17 @@ biplot_base <- fviz_pca_biplot(res.pca,
                                labelsize = 2,
                                label = "var",
                                addEllipses = TRUE,
-                               col.ind = sum_depth_sheet_subset$area
+                               col.ind = excavation_area
                               )
 
 # Modify row names of coordinates
-rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label
+rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label2
 
 pca_label_text <- 
 res.pca$ind$coord %>% 
   as_tibble() %>% 
-  mutate(labels = sum_depth_sheet_subset$label,
-         area =   sum_depth_sheet_subset$area) 
+  mutate(labels = sum_depth_sheet_subset$label2,
+         area =   excavation_area) 
 
 # Add geom_text_repel() to the base plot
 biplot_modified <- biplot_base +
@@ -2259,40 +1867,4 @@ biplot_modified <- biplot_base +
 # Display the plot
 biplot_modified
 
-```
-
-```{r}
-# Base biplot without points
-biplot_base <- fviz_pca_biplot(res.pca,
-                               axes = c(1, 2),
-                               geom = "none",  
-                               labelsize = 2
-                               )
-
-# Add points and text labels manually
-biplot_modified <- biplot_base +
-  geom_point(data = coord_df, 
-             aes(x = Dim.1, 
-                 y = Dim.2, 
-                 color = group), size = 1) +
-  geom_text_repel(data = coord_df,
-                  aes(x = Dim.1,
-                      y = Dim.2,
-                      label = label),
-                  box.padding = 0.5,
-                  point.padding = 0.5,
-                  size = 2)
-
-# Display the plot
-biplot_modified
-
-```
-
-```{r}
-# Visualize biplot: 2
-fviz_pca_biplot(res.pca,
-                axes = c(3, 4),
-                labelsize = 2
-                )
-rownames(res.pca$ind$coord) <- sum_depth_sheet$label
 ```

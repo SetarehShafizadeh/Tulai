@@ -1,5 +1,82 @@
 
 #---------------------------------------------------------------
+# BM: we need a single sheet that has only the excavation data
+# such as excavation area, chronological level, depth, area of excavation
+# only that. The we join it to the lithic data. We only want the lithic
+# data to exist in one sheet. Not multiple sheets, that will lead to errors.
+# This is called 'normalisation' of the data.
+
+# get data from google sheet
+library(googlesheets4)
+
+google_sheet_url <-
+  "https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0"
+
+sum_depth_sheet <-
+  read_sheet(google_sheet_url) %>%
+  mutate(level = unlist(level)) %>%
+  mutate(level = ifelse(level == "clay", 1, level)) %>%
+  mutate(label1 = paste(area,
+                       layer,
+                       level,
+                       sep = "_")) %>%
+  mutate(label2 = paste(area,
+                        layer,
+                        level,
+                        upper,
+                        lower,
+                        sep = "_")) %>%
+  select(label1,
+         label2,
+         upper_depth = upper,
+         lower_depth = lower,
+         excavation_area = area,
+         chronological_unit = layer,
+         grouped_level = level,
+         `excavation area`) %>%
+  separate_wider_delim(`excavation area`,
+           names = c("excavation_dimension_1",
+                    "excavation_dimension_2"),
+           delim = "*")
+
+write_csv(sum_depth_sheet,
+          "data/excavation_data.csv")
+
+sum_depth_sheet$label
+
+summary_table_depth_area_unit$label
+
+
+
+
+
+
+
+#---------------------------------------------------------------
+
+# import table with depths that we have subdivided
+depths_divided_tbl <-
+  read_csv(here("data/Lookup Table - Sheet1.csv")) %>%
+  mutate(division_id = rep(c("a", "b"),
+                           nrow(.)/2))
+
+# google sheet has 42 rows, and cols for
+# area, chronological_unit, level, depth. What is the equivalent above? tp1_c_3_a
+
+# This 'depths_divided_tbl' needs more information, for example, some depth ranges
+
+# join with lithic data that
+summary_table_depth_area_unit_to_join %>%
+  left_join(depths_divided_tbl) %>%
+  mutate(label = paste(area,
+                       chronological_unit,
+                       # level, # need this
+                       division_id,
+                       sep = "_")) %>% View
+
+
+
+#---------------------------------------------------------------
 # BM: diagnosing an incorrect tool_type value at around line 1840
 # BM: this is what I saw in the qmd file around line 1844:
 
