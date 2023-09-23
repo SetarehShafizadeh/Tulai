@@ -26,12 +26,12 @@ Import the data
 
 ```{r}
 # Read the data
-tl <- read_csv(here("data/Tulai_Lithic_Assamblage.csv"))
+tl <- read_csv(here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
 
 # this file is prepared from the google sheet here
 # https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
 # and simplified using code in the scraps.R file
-excavation_data <- read_csv(here("data/excavation_data.csv"))
+excavation_data <- read_csv(here("data//raw-data/excavation_data.csv"))
 ```
 
 Clean the data
@@ -1508,10 +1508,15 @@ summary_table_area_filtered <-
   summary_table_area %>%
   filter(area %in% c("ta", "d1", "tp1")) 
 
+# BM: export this table as a CSV to paste into the 
+# drafting document to prepare for submission
+
+write_csv(summary_table_area_filtered,
+          here("data/derived-data/tbl-001-summary_table_area_filtered.csv"))
+
 # BM: this is table 1 in the manuscript
 knitr::kable(summary_table_area_filtered,
              caption = "Summary of lithics in the main areas")
-
 ```
 
 #### Techno-typological classes by excavation area
@@ -1541,9 +1546,11 @@ total_row <- summary_table_tool_area %>%
 summary_table_tool_area <-
   bind_rows(summary_table_tool_area, total_row)
 
-```
+# BM: export this table as a CSV to paste into the 
+# drafting document to prepare for submission
 
-```{r}
+write_csv(summary_table_tool_area,
+          here("data/derived-data/tbl-002-summary_table_tool_area.csv"))
 
 kable(
   summary_table_tool_area,
@@ -1669,40 +1676,58 @@ library(ggrepel)
 # here I do not consider those levels with a value 0 of retouch frequency. 
 filtered_data <- 
   sum_depth_sheet %>% 
-  filter(lithic_density > 0 & retouch_frequency > 0)
+  filter(lithic_density > 0 & retouch_frequency > 0)  %>% 
+  mutate(excavation_area =  str_extract(label2, "[^_]+"))
 
 WABI_Level <- ggplot(filtered_data,  
             aes(x = lithic_density,
                 y = retouch_frequency)) +
-  geom_point(color = "black", 
-             size = 1.5) +
+  geom_point(aes(color = excavation_area,
+                 shape = excavation_area), 
+             size = 4) +
   geom_smooth(method = "lm", 
-              se = TRUE, 
+              se = FALSE, 
               color = "blue", 
               linewidth = 0.5) +
   # Add text labels based on 'label' column
-  geom_text_repel(aes(label = label2)) +
+  # BM: this is useful for investigating and
+  # preparing, but not really informative 
+  # for the reader, so we omit for publication
+  # geom_text_repel(aes(label = label2)) +
   stat_poly_eq(aes(label = paste(stat(eq.label), 
                                   stat(rr.label), 
                                   stat(p.value.label), 
                                   sep = "~~~")),
                formula = y ~ x, 
                parse = TRUE, 
-               size = 4) +
+               size = 5,
+               label.x = "right",
+               label.y = "bottom") +
   labs(
     x = "Lithic Volumetric Density",
-    y = "Retouch Frequency"
+    y = "Retouch Frequency",
+    colour = "Excavation area",
+    shape = "Excavation area"
   ) +
   scale_x_log10() +
   scale_y_log10() +
+  theme_minimal() +
   theme(
+    legend.position = c(.8,.3),
     axis.text = element_text(size = 7),
     axis.title = element_text(size = 10),
     plot.title = element_text(size = 12)
-  )
+  ) 
 
 # Print the plot to display it
 WABI_Level
+
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here("figures/fig-wabi-plot.jpg"),
+       h = 6, 
+       w = 8)
 
 ```
 
@@ -1730,7 +1755,7 @@ sum_depth_sheet_for_pca <-
     # Calculate tool diversity using Menhinick's index
       tool_diversity = tool_type_count / sqrt(total_tools)) %>% 
    # drop rows that have no tools 
-  filter(total_tools != 0)
+  filter(total_tools != 0)  
 
 # performing PCA
 
@@ -1739,10 +1764,10 @@ library(factoextra)
 
 sum_depth_sheet_subset <- 
  sum_depth_sheet_for_pca %>%
-  drop_na(tool_diversity) #%>% 
-  # filter(!label %in% c("tp1_c_3_a",
-  #                      "d1_a_2_b",
-  #                     "d1_c_3_b"))
+  drop_na(tool_diversity) %>% 
+  # explore the effect of outliers on the PCA space
+ filter(!label2 %in% c("tp1_b_1_120_140",
+                        "tp1_c_3_0_10"))
 
 pca_data <- 
 sum_depth_sheet_subset %>% 
@@ -1768,7 +1793,7 @@ res.pca <- PCA(pca_data, graph = FALSE)
 # save contribution plots into one objects
 
 contribution_plots <- 
-map(1:5, ~fviz_contrib(res.pca, 
+map(1:4, ~fviz_contrib(res.pca, 
                    choice = "var", 
                    axes = .x, 
                    top = 10))
@@ -1777,6 +1802,14 @@ map(1:5, ~fviz_contrib(res.pca,
 library(cowplot)
 plot_grid(plotlist = contribution_plots,
                    ncol = 2)
+
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here("figures/fig-contribution-plots.jpg"),
+       h = 6, 
+       w = 8)
+
 ```
 
 ```{r}
@@ -1787,10 +1820,10 @@ fviz_screeplot(res.pca)
 ```{r}
 # Inspect eigenvalues
 
-eigen_df <- data.frame(
-   eigenvalue = res.pca$eig[,1],
-  `percentage of variance` = res.pca$eig[,2],
-  `cumulative percentage of variance` = res.pca$eig[,3]
+eigen_df <- tibble(
+   Eigenvalue = res.pca$eig[,1],
+  `Percentage of Variance` = res.pca$eig[,2],
+  `Cumulative Percentage of Variance` = res.pca$eig[,3]
 )
 
 library(kableExtra)
@@ -1801,15 +1834,19 @@ eigen_df$Dimension <-
 
 # Re-order the columns based on the corrected names
 eigen_df <- eigen_df[, c("Dimension", 
-                         "eigenvalue", 
-                         "percentage.of.variance",
-                         "cumulative.percentage.of.variance")]
+                         "Eigenvalue", 
+                         "Percentage of Variance",
+                         "Cumulative Percentage of Variance")]
 
 # Round the numerical columns to 3 decimal places
 eigen_df[, 2:4] <- round(eigen_df[, 2:4], 2)
 
-# Removing row names
-rownames(eigen_df) <- NULL  
+# BM: export this table as a CSV to paste into the 
+# drafting document to prepare for submission
+
+write_csv(eigen_df,
+          here("data/derived-data/tbl-003-pca-eigenvalues.csv"))
+
 
 # Creating the kable output
 kable_output <- kable(eigen_df, 
@@ -1840,7 +1877,8 @@ biplot_base <- fviz_pca_biplot(res.pca,
                                labelsize = 2,
                                label = "var",
                                addEllipses = TRUE,
-                               col.ind = excavation_area
+                               col.ind = excavation_area,
+                               title = ""
                               )
 
 # Modify row names of coordinates
@@ -1862,9 +1900,20 @@ biplot_modified <- biplot_base +
                                    segment.color = "grey80",
                                    size = 2,
                                    force = 10
-                                  )
+                                  ) +
+  labs(colour = "",
+       shape = "",
+       fill = "") +
+  theme(legend.position = c(0.9, 0.2))
 
 # Display the plot
 biplot_modified
+
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here("figures/fig-pca-biplot.jpg"),
+       h = 6, 
+       w = 8)
 
 ```
