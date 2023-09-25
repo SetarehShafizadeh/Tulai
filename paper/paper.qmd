@@ -483,11 +483,11 @@ tl4 <- tl4 %>%
              `Core Typology` == "pressureflat core" ~ "flat-pressure",
              `Core Typology` == "pressurebullet core" ~ "bullet-pressure",
              `Core Typology` == "prussurebullet core" ~ "bullet-pressure",
-             `Core Typology` == "prismaticcore" ~ "prismatic-percussion",
+             `Core Typology` == "prismaticcore" ~ "cylinder/prismatic-percussion",
              `Core Typology` == "pyramidalpressure core" ~ "pyramid-pressure",
              `Core Typology` == "flatcore with one debitage surface/pressure" ~ "flat-pressure",
              `Core Typology` == "corefragment" ~ "core fragment-NA",
-             `Core Typology` == "cilandrical/pressure" ~ "cylinder-pressure",
+             `Core Typology` == "cilandrical/pressure" ~ "cylinder/prismatic-pressure",
              `Core Typology` == "bullet/pressure" ~ "bullet-pressure",
              `Core Typology` == "pyramidal/pressure" ~ "pyramid-pressure",
              `Core Typology` == "percussion/pyramidal" ~ "pyramid-pressure",
@@ -525,7 +525,10 @@ tl4 <- tl4 %>%
     `Core Typology` == "pyramidal? / pressure" ~ "pyramid-pressure",
     `Core Typology` == "prismatic" ~ "pyramid-pressure",
     
-    `Core Typology` == "bullet" ~ "bullet-pressure",
+    `Core Typology` == "0" ~ "",
+    `Core Typology` == "na" ~ "",
+    `Core Typology` == "na" ~ "",
+    
     
     TRUE ~ `Core Typology`
   )) %>%
@@ -1074,8 +1077,8 @@ tl4 <- tl4 %>%
       `Typology` == "unidirectionalbladelet/flake-blade core" ~ "core/mixed",
       `Typology` == "unidirectionalmixed core" ~ "core/mixed",
       `Typology` == "unidirectionalflat bladelet core" ~ "core/flat",
-      `Typology` == "" ~ "NA-NA",
-      `Typology` == "na" ~ "NA-NA",
+      `Typology` == "" ~ "",
+      `Typology` == "na" ~ "",
       TRUE ~ `Typology`
     )
   )  %>%
@@ -1341,7 +1344,11 @@ tl_final <- tl_final %>%
     `core-fragment` = case_when(
       `core-fragment` == "rejuvenation piece" ~ "rejuvenation piece",
       `core-fragment` == "rejuvention piece-side" ~ "rejuvenation piece",
+      `core-fragment` == "rejuvenation piece-side" ~ "rejuvenation piece",
       `core-fragment` == "core preparation piece-platform" ~ "core tablet",
+      `core-fragment` == "core preparation piece-platform" ~ "core tablet",
+      `core-fragment` == "core platform rejuvention" ~ "core tablet",
+      `core-fragment` == "core platform rejuvention " ~ "core tablet",
       `core-fragment` == "core preparation" ~ "rejuvenation piece",
       `core-fragment` == "core preparation piece" ~ "rejuvenation piece",
       `core-fragment` == "core preperation" ~ "rejuvenation piece",
@@ -1351,7 +1358,7 @@ tl_final <- tl_final %>%
       `core-fragment` == "core fragment-pyramid" ~ "pyramid",
       `core-fragment` == "cylinder" ~ "cylinder/prismatic",
       `core-fragment` == "prismatic" ~ "cylinder/prismatic",
-      `core-fragment` == "shapeless" ~ "cylinder/prismatic",
+      `core-fragment` == "shapeless" ~ "shapeless",
       `core-fragment` == "multidirectional core fragment" ~ "shapeless",
       `core-fragment` == "multidirectional flake core" ~ "shapeless",
       `core-fragment` == "multidirectional bladelet core" ~ "shapeless",
@@ -1362,6 +1369,7 @@ tl_final <- tl_final %>%
       `core-fragment` == "flat" ~ "flat",
       `core-fragment` == "core on flake" ~ "core on flake",
       `core-fragment` == "bullet" ~ "bullet",
+      `core-fragment` == "NA" ~ "",
       TRUE ~ `core-fragment`
       
     )
@@ -1370,35 +1378,43 @@ tl_final <- tl_final %>%
     core = case_when(
       `core-fragment` %in% c(
         "pyramid",
-        "pyramid core",
-        "pyramid-unidirectional",
-        "core fragment-pyramid",
         "cylinder/prismatic",
-        "shapeless",
-        "multidirectional core fragment",
-        "multidirectional flake core",
-        "multidirectional bladelet core",
+        "core fragment",
+        "cylinder/prismatic",
+        "bullet",
+        "flat",
+        "core on flake",
+        "bipolar",
         "mixed core",
         "mixed-percussion",
         "mixed",
         "bipolar-percussion",
         "flat",
         "core on flake",
-        "bullet"
+        "bullet",
+        "pyramid",
+        "flat",
+        "cylinder/prismatic ",
+        "bipolar ",
+        "shapeless ",
+        "bullet "
+        
       ) ~ `core-fragment`,
       TRUE ~ NA_character_
     ),
     corefrag = case_when(
       `core-fragment` %in% c(
         "rejuvenation piece",
-        "rejuvention piece-side",
-        "core preparation piece-platform",
-        "core preparation",
-        "core preparation piece",
+        "core tablet",
+        "primary flake",
+        "primary blade",
+        "crested bladelet",
         "core preperation",
         "crested bladelet" ,
         "primary flake" ,
-        "primary blade"
+        "primary blade",
+        "core fragment "
+        
       ) ~ `core-fragment`,
       TRUE ~ NA_character_
     )
@@ -1418,6 +1434,7 @@ tl_final <- tl_final %>%
   mutate(core = if_else(
     `core-fragment` %in%
       c(
+        "shapeless",
         "pyramid",
         "cylinder/prismatic",
         "flat",
@@ -1473,12 +1490,20 @@ tl_final <- tl_final %>%
   ))
 
 
+
 # take a look
-# rev(sort(table(tl_final$core)))
-# rev(sort(table(tl_final$corefrag)))
-# rev(sort(table(tl_final$`core-fragment`)))
-# rev(sort(table(tl_final$blank)))
+ rev(sort(table(tl_final$core)))
+ rev(sort(table(tl_final$corefrag)))
+ rev(sort(table(tl_final$`core-fragment`)))
+ rev(sort(table(tl_final$`core-typology`)))
+ rev(sort(table(tl_final$blank)))
 ```
+
+```{r}
+
+```
+
+
 
 ### Summary tables of the lithic assemblages
 
@@ -1489,7 +1514,8 @@ tl_final <- tl_final %>%
 summary_table_area <- tl_final %>%
   group_by(area) %>%
   summarise(
-    `Cores (n)` = sum(!is.na(core) & core != ""),
+   `Cores (n)` = sum((!is.na(`core-typology`) & `core-typology` != "") |
+                      (!is.na(core) & core != ""), na.rm = TRUE),  # Summing variables from both columns
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
                                             corefrag != ""),
     `Blade (n)` = sum(blank == "blade", na.rm = TRUE),
@@ -1517,6 +1543,11 @@ write_csv(summary_table_area_filtered,
 # BM: this is table 1 in the manuscript
 knitr::kable(summary_table_area_filtered,
              caption = "Summary of lithics in the main areas")
+```
+
+
+```{r}
+
 ```
 
 #### Techno-typological classes by excavation area
@@ -1558,6 +1589,41 @@ kable(
   caption = "Tool Typology in the three main areas")
 
 ```
+
+
+```{r}
+# Manually calculate the totals for each area and grand total
+total_d1 <- sum(summary_table_tool_area$d1, na.rm = TRUE)
+total_ta <- sum(summary_table_tool_area$ta, na.rm = TRUE)
+total_tp1 <- sum(summary_table_tool_area$tp1, na.rm = TRUE)
+grand_total <- total_d1 + total_ta + total_tp1
+
+# Calculate the percentages for each cell based on the total count
+summary_table_tool_area_percentage <- summary_table_tool_area %>%
+  mutate(
+    percent_d1 = round(d1 / total_d1 * 100, 1),
+    percent_ta = round(ta / total_ta * 100, 1),
+    percent_tp1 = round(tp1 / total_tp1 * 100, 1)
+  ) %>%
+  # Add the total_percent column, calculating based on grand total
+  mutate(total_percent = round((d1 + ta + tp1) / grand_total * 100, 1))
+
+# Select only the necessary columns (tooltypegroup, the percentage columns, and total_percent)
+summary_table_tool_area_percentage <- summary_table_tool_area_percentage %>%
+  select(tooltypegroup, percent_d1, percent_ta, percent_tp1, total_percent)
+
+# write the percentage table to a CSV file
+write_csv(summary_table_tool_area_percentage,
+          here("data/derived-data/tbl-002-summary_table_tool_area_percentage.csv"))
+
+kable(
+  summary_table_tool_area_percentage,
+  col.names = c("Tools", "D1 (%)", "TA (%)", "TP1 (%)", "Total (%)"),
+  caption = "Tool Typology in the three main areas (Percentage)"
+)
+
+```
+
 
 ### Combine lithic data with excavation data to prepare for WABI
 
@@ -1626,7 +1692,8 @@ tl_final_excavation_data_volume %>%
     tool_count =               sum(retouch == 1, 
                                    na.rm = TRUE) + sum(utilization == 1, 
                                                        na.rm = TRUE),
-    core_count =               sum(!is.na(`core-typology`), na.rm = TRUE),
+    core_count =                sum(!is.na(`core-typology`), na.rm = TRUE) + sum(!is.na(core), na.rm = TRUE),
+    
     core_rejuvenation_count =  sum(!is.na(`corefrag`), 
                                    na.rm = TRUE),
     retouched_tool_count =     sum(retouch == 1, 
@@ -1641,15 +1708,15 @@ tl_final_excavation_data_volume %>%
   ) %>% 
  # BM:  "total lithics" is everything except sickle shine, 
  # "retouch frequency" is retouched_tool_count / "total lithics"
+# SS: I think "total lithics" would be the total of blade, flake,bladelet, core and core rejuvenation counts (as we already cound the tools in bladelet, blade, or flake) 
   rowwise() %>% 
   mutate(total_lithics = sum(blade_count,
                              flake_count,
                              bladelet_count,
-                             tool_count,
                              core_count,
-                             core_rejuvenation_count,
-                             retouched_tool_count,
-                             utilized_tool_count)) %>% 
+                             core_rejuvenation_count
+                             
+                             )) %>% 
   mutate(retouch_frequency =  retouched_tool_count / total_lithics)
 
 # BM: get the total number of artefacts, number of retouched pieces, and 
@@ -1917,3 +1984,9 @@ ggsave(here("figures/fig-pca-biplot.jpg"),
        w = 8)
 
 ```
+
+
+
+
+ 
+ 
