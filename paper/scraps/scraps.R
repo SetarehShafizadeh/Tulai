@@ -21,12 +21,15 @@ pca_data_for_post_hoc_testing <-
 pca_data %>%
   add_column(excavation_area)
 
+# Is there are significant difference in the groups that
+# we see in the PCA?
 PerMANOVA_results <-
 adonis2(pca_data[, 1:5] ~ excavation_area,
         data = pca_data_for_post_hoc_testing,
         method='eu')
 
-
+# Which specific pairs of groups differ from each other?
+# https://github.com/pmartinezarbizu/pairwiseAdonis
 library(pairwiseAdonis)
 pairwise.adonis2_results <-
 pairwise.adonis2(pca_data[, 1:5] ~ excavation_area,
