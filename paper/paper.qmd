@@ -13,7 +13,6 @@ title-block-published: "last updated"
 
 ```{r}
 # load libraries
-library(tidyverse)
 library(here)
 library(ggpmisc)
 library(ggrepel)
@@ -23,6 +22,7 @@ library(knitr)
 library(ggcorrplot)
 library(ggpubr)
 library(ggbiplot)
+library(tidyverse) # load this last to minimize conflicts
 ```
 
 Import the data
@@ -34,7 +34,8 @@ tl <- read_csv(here::here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
 # this file is prepared from the google sheet here
 # https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
 # and simplified using code in the scraps.R file
-excavation_data <- read_csv(here::here("data//raw-data/excavation_data.csv"))
+excavation_data <- 
+  read_csv(here::here("data//raw-data/excavation_data.csv"))
 ```
 
 Clean the data
@@ -1495,17 +1496,12 @@ tl_final <- tl_final %>%
 
 
 # take a look
- rev(sort(table(tl_final$core)))
- rev(sort(table(tl_final$corefrag)))
- rev(sort(table(tl_final$`core-fragment`)))
- rev(sort(table(tl_final$`core-typology`)))
- rev(sort(table(tl_final$blank)))
+ # rev(sort(table(tl_final$core)))
+ # rev(sort(table(tl_final$corefrag)))
+ # rev(sort(table(tl_final$`core-fragment`)))
+ # rev(sort(table(tl_final$`core-typology`)))
+ # rev(sort(table(tl_final$blank)))
 ```
-
-```{r}
-
-```
-
 
 
 ### Summary tables of the lithic assemblages

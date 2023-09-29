@@ -1,13 +1,15 @@
 tooltypegroup,d1,ta,tp1,Total
-backed pieces,0,4,0,4
-burin,0,1,0,1
-denticulate-notch,3,87,3,93
-geometric,1,2,0,3
-Perforator,0,33,0,33
-retouched piece,8,158,24,190
-scraper,1,14,0,15
-serrated scraper,0,5,0,5
+backed pieces,0,11,2,13
+burin,2,8,1,11
+denticulate-notch,4,110,7,121
+geometric,3,2,0,5
+microburin,0,4,0,4
+Perforator,2,50,2,54
+retouched piece,5,89,15,109
+scraper,4,84,6,94
+scraper-notch,0,4,0,4
+serrated scraper,0,15,1,16
 sickle shine,1,48,6,55
-truncated pieces,1,6,0,7
+truncated pieces,1,10,0,11
 utilized tool,5,282,31,318
-Total,20,640,64,724
+Total,27,717,71,815
