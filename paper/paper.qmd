@@ -1677,11 +1677,8 @@ summary_table_tool_area_percentage <- summary_table_tool_area_percentage %>%
   select(tooltypegroup, percent_d1, percent_ta, percent_tp1, total_percent)
 
 # write the percentage table to a CSV file
-<<<<<<< HEAD
-=======
 write_csv(summary_table_tool_area_percentage,
           here::here("data/derived-data/tbl-002-summary_table_tool_area_percentage.csv"))
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
 
 
 ```
@@ -2001,14 +1998,11 @@ excavation_area <-
               "[^_]+")
 pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
-<<<<<<< HEAD
 library(ggpubr)
 library(ggbiplot)
 
 pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
-=======
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
 biplot_modified <- 
 ggbiplot(
   pca_data.pca,
@@ -2016,12 +2010,7 @@ ggbiplot(
   var.scale = 1,
   groups = excavation_area,
   ellipse = FALSE,
-<<<<<<< HEAD
-  circle = TRUE
 ) +
-=======
-  circle = TRUE) +
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
   stat_chull(aes(color = excavation_area,
                  fill = excavation_area),
              alpha = 0.1,
@@ -2039,12 +2028,8 @@ biplot_modified
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-<<<<<<< HEAD
 ggsave(plot = biplot_modified,
        filename = here::here("figures/fig-pca-biplot.jpg"),
-=======
-ggsave(here::here("figures/fig-pca-biplot.jpg"),
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
        h = 6, 
        w = 8)
 

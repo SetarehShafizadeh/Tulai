@@ -1,16 +1,4 @@
 
-<<<<<<< HEAD
-#BM: explore PCA with hulls
-# library(devtools)
-# install_github("vqv/ggbiplot")
-library(ggpubr)
-library(ggbiplot)
-data(wine)
-wine.pca <- prcomp(pca_data, scale. = TRUE)
-
-ggbiplot(
-  wine.pca,
-=======
 # BM: new method to me! I found https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8858582/
 
 library(PCAtest)
@@ -23,7 +11,6 @@ result <-
           varcorr=FALSE,
           counter=FALSE,
           plot=TRUE)
-
 
 # PerMANOVA - partitioning the euclidean distance matrix by species
 # from https://stackoverflow.com/a/20267537/1036500
@@ -54,12 +41,10 @@ pairwise.adonis2(pca_data[, 1:5] ~ excavation_area,
 
 library(ggpubr)
 library(ggbiplot)
-data(wine)
 pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
 ggbiplot(
   pca_data.pca,
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
   obs.scale = 1,
   var.scale = 1,
   groups = excavation_area,
@@ -78,15 +63,12 @@ ggbiplot(
   theme_minimal()
 
 
-
-<<<<<<< HEAD
 # BM: some discrepancy found in artefact counts for
 
  rev(sort(table(tl_final_area$area)))
 
  rev(sort(table(tl_final_depth_area_unit$area)))
-=======
->>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
+
 
 
 #---------------------------------------------------------------

@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.3.1",
+    "Version": "4.2.2",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -127,7 +127,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "304f40a78b39beb8fbd843bf96ca6a3c"
+      "Hash": "2c8c6e025e08e938351c015ac2b2d318"
     },
     "R6": {
       "Package": "R6",
@@ -1720,6 +1720,26 @@
       ],
       "Hash": "273a6bb4a9844c296a459d2176673270"
     },
+    "pairwiseAdonis": {
+      "Package": "pairwiseAdonis",
+      "Version": "0.4.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "pairwiseAdonis",
+      "RemoteUsername": "pmartinezarbizu",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "cb190f7668a0c82c0b0853927db239e7b9ec3e83",
+      "RemoteSubdir": "pairwiseAdonis",
+      "Requirements": [
+        "R",
+        "cluster",
+        "permute",
+        "stats",
+        "vegan"
+      ],
+      "Hash": "ae256f0639d15ac29fedbf33ec7e78a9"
+    },
     "pbkrtest": {
       "Package": "pbkrtest",
       "Version": "0.5.2",
@@ -1737,6 +1757,17 @@
         "parallel"
       ],
       "Hash": "3b5b99f4d3f067bb9c1d59317d071370"
+    },
+    "permute": {
+      "Package": "permute",
+      "Version": "0.9-7",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "R",
+        "stats"
+      ],
+      "Hash": "abf0ca85c1c752e0d04f46334e635046"
     },
     "pillar": {
       "Package": "pillar",
@@ -2486,6 +2517,21 @@
         "rlang"
       ],
       "Hash": "d0ef2856b83dc33ea6e255caf6229ee2"
+    },
+    "vegan": {
+      "Package": "vegan",
+      "Version": "2.6-4",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "MASS",
+        "R",
+        "cluster",
+        "lattice",
+        "mgcv",
+        "permute"
+      ],
+      "Hash": "659fe7589b8e0b16baa49043a61a0ce0"
     },
     "vipor": {
       "Package": "vipor",
