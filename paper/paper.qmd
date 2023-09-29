@@ -29,12 +29,12 @@ Import the data
 
 ```{r}
 # Read the data
-tl <- read_csv(here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
+tl <- read_csv(here::here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
 
 # this file is prepared from the google sheet here
 # https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
 # and simplified using code in the scraps.R file
-excavation_data <- read_csv(here("data//raw-data/excavation_data.csv"))
+excavation_data <- read_csv(here::here("data//raw-data/excavation_data.csv"))
 ```
 
 Clean the data
@@ -453,11 +453,11 @@ tl4 <- tl4 %>%
                    "Semi-Abrupt") ~ NA_character_,
       TRUE ~ SHINE
     ),
-    Utilization = if_else(Utilization == "0", NA_character_, Utilization),
-    Retouch =     if_else(Retouch == "0", NA_character_, Retouch),
-    SHINE =       if_else(SHINE == "0", NA_character_, SHINE),
-    shine2 =      if_else(shine2 == "0", NA_character_, shine2),
-    Blank2 =      if_else(Blank2 == "0", NA_character_, Blank2)
+    Utilization = if_else(Utilization == "0", NA, Utilization),
+    Retouch =     if_else(Retouch ==     "0", NA, Retouch),
+    SHINE =       if_else(SHINE ==       "0", NA, SHINE),
+    shine2 =      if_else(shine2 ==      "0", NA, shine2),
+    Blank2 =      if_else(Blank2 ==      "0", NA, Blank2)
   ) %>% 
   mutate(
     SHINE = na_if(SHINE, "")
@@ -1106,9 +1106,9 @@ tl4 <- tl4 %>%
 # refine the table
 
 tl_final <- tl4 %>%
-  rename(
+  dplyr::rename(
     blank =                Blank2,
-   `sickle shine` =       shine2,
+   `sickle shine` =        shine2,
     length =              `Length (mm)` ,
     width =               `Width (mm)`,
     thickness =           `Thickness (mm)`, 
@@ -1516,7 +1516,7 @@ tl_final <- tl_final %>%
 # Create a summary table
 summary_table_area <- tl_final %>%
   group_by(area) %>%
-  summarise(
+  dplyr::summarise(
    `Cores (n)` = sum((!is.na(`core-typology`) & `core-typology` != "") |
                       (!is.na(core) & core != ""), na.rm = TRUE),  # Summing variables from both columns
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
@@ -1535,13 +1535,13 @@ tl_final_area <- tl_final %>%
 
 summary_table_area_filtered <- 
   summary_table_area %>%
-  filter(area %in% c("ta", "d1", "tp1")) 
+  dplyr::filter(area %in% c("ta", "d1", "tp1")) 
 
 # BM: export this table as a CSV to paste into the 
 # drafting document to prepare for submission
 
 write_csv(summary_table_area_filtered,
-          here("data/derived-data/tbl-001-summary_table_area_filtered.csv"))
+          here::here("data/derived-data/tbl-001-summary_table_area_filtered.csv"))
 
 # BM: this is table 1 in the manuscript
 knitr::kable(summary_table_area_filtered,
@@ -1607,7 +1607,7 @@ summary_table_tool_area <- summary_table_tool_area %>%
 
 total_row <- summary_table_tool_area %>%
   select(-tooltypegroup) %>%
-  summarise(across(everything(), \(x) sum(x, na.rm = TRUE))) %>%
+  dplyr::summarise(across(everything(), \(x) sum(x, na.rm = TRUE))) %>%
   mutate(tooltypegroup = "Total")
 
 summary_table_tool_area <-
@@ -1617,7 +1617,7 @@ summary_table_tool_area <-
 # drafting document to prepare for submission
 
 write_csv(summary_table_tool_area,
-          here("data/derived-data/tbl-002-summary_table_tool_area.csv"))
+          here::here("data/derived-data/tbl-002-summary_table_tool_area.csv"))
 
 kable(
   summary_table_tool_area,
@@ -1682,7 +1682,7 @@ summary_table_tool_area_percentage <- summary_table_tool_area_percentage %>%
 
 # write the percentage table to a CSV file
 write_csv(summary_table_tool_area_percentage,
-          here("data/derived-data/tbl-002-summary_table_tool_area_percentage.csv"))
+          here::here("data/derived-data/tbl-002-summary_table_tool_area_percentage.csv"))
 
 kable(
   summary_table_tool_area_percentage,
@@ -1753,7 +1753,7 @@ excavation_data_volume %>%
 tl_final_excavation_data_volume_artefact_counts <- 
 tl_final_excavation_data_volume %>% 
   group_by(label2) %>% 
-   summarise(
+   dplyr::summarise(
     blade_count =              sum(blank == "blade", na.rm = TRUE),
     flake_count =              sum(blank == "flake", na.rm = TRUE),
     bladelet_count =           sum(blank == "bladelet", na.rm = TRUE),
@@ -1860,7 +1860,7 @@ WABI_Level
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-ggsave(here("figures/fig-wabi-plot.jpg"),
+ggsave(here::here("figures/fig-wabi-plot.jpg"),
        h = 6, 
        w = 8)
 
@@ -1941,7 +1941,7 @@ plot_grid(plotlist = contribution_plots,
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-ggsave(here("figures/fig-contribution-plots.jpg"),
+ggsave(here::here("figures/fig-contribution-plots.jpg"),
        h = 6, 
        w = 8)
 
@@ -1980,7 +1980,7 @@ eigen_df[, 2:4] <- round(eigen_df[, 2:4], 2)
 # drafting document to prepare for submission
 
 write_csv(eigen_df,
-          here("data/derived-data/tbl-003-pca-eigenvalues.csv"))
+          here::here("data/derived-data/tbl-003-pca-eigenvalues.csv"))
 
 
 # Creating the kable output
@@ -2005,41 +2005,26 @@ rownames(res.pca$ind$coord) <-
 excavation_area <- 
   str_extract(sum_depth_sheet_subset$label2, 
               "[^_]+")
+pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
-# Generate the base biplot
-biplot_base <- fviz_pca_biplot(res.pca,
-                               axes = c(1, 2),
-                               labelsize = 2,
-                               label = "var",
-                               addEllipses = TRUE,
-                               col.ind = excavation_area,
-                               title = ""
-                              )
-
-# Modify row names of coordinates
-rownames(res.pca$ind$coord) <- sum_depth_sheet_subset$label2
-
-pca_label_text <- 
-res.pca$ind$coord %>% 
-  as_tibble() %>% 
-  mutate(labels = sum_depth_sheet_subset$label2,
-         area =   excavation_area) 
-
-# Add geom_text_repel() to the base plot
-biplot_modified <- biplot_base +
-                   geom_text_repel(data = pca_label_text,
-                                   aes(x = Dim.1, 
-                                       y = Dim.2, 
-                                       label = labels,
-                                       colour = area),
-                                   segment.color = "grey80",
-                                   size = 2,
-                                   force = 10
-                                  ) +
-  labs(colour = "",
-       shape = "",
-       fill = "") +
-  theme(legend.position = c(0.9, 0.2))
+biplot_modified <- 
+ggbiplot(
+  pca_data.pca,
+  obs.scale = 1,
+  var.scale = 1,
+  groups = excavation_area,
+  ellipse = FALSE,
+  circle = TRUE) +
+  stat_chull(aes(color = excavation_area,
+                 fill = excavation_area),
+             alpha = 0.1,
+             geom = "polygon") +
+  scale_colour_brewer(palette = "Set1",
+                      name = '',
+                      guide = 'none') +
+  scale_fill_brewer(palette = "Set1",
+                    name = '')  +
+  theme_minimal()
 
 # Display the plot
 biplot_modified
@@ -2047,7 +2032,7 @@ biplot_modified
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-ggsave(here("figures/fig-pca-biplot.jpg"),
+ggsave(here::here("figures/fig-pca-biplot.jpg"),
        h = 6, 
        w = 8)
 

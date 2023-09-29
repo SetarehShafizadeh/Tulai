@@ -1,4 +1,34 @@
 
+# BM: PCA plot with convex hulls (I thought we did this already
+# in our meeting because I can see the plot in the google doc
+# but seems we didn't save-commit-push it?)
+
+library(ggpubr)
+library(ggbiplot)
+data(wine)
+pca_data.pca <- prcomp(pca_data, scale. = TRUE)
+
+ggbiplot(
+  pca_data.pca,
+  obs.scale = 1,
+  var.scale = 1,
+  groups = excavation_area,
+  ellipse = FALSE,
+  circle = TRUE
+) +
+  stat_chull(aes(color = excavation_area,
+                 fill = excavation_area),
+             alpha = 0.1,
+             geom = "polygon") +
+  scale_colour_brewer(palette = "Set1",
+                      name = '',
+                      guide = 'none') +
+  scale_fill_brewer(palette = "Set1",
+                    name = '')  +
+  theme_minimal()
+
+
+
 #---------------------------------------------------------------
 # BM: we need a single sheet that has only the excavation data
 # such as excavation area, chronological level, depth, area of excavation
