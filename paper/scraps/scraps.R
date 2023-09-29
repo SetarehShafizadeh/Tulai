@@ -1,4 +1,40 @@
 
+#BM: explore PCA with hulls
+# library(devtools)
+# install_github("vqv/ggbiplot")
+library(ggpubr)
+library(ggbiplot)
+data(wine)
+wine.pca <- prcomp(pca_data, scale. = TRUE)
+
+ggbiplot(
+  wine.pca,
+  obs.scale = 1,
+  var.scale = 1,
+  groups = excavation_area,
+  ellipse = FALSE,
+  circle = TRUE
+) +
+  stat_chull(aes(color = excavation_area,
+                 fill = excavation_area),
+             alpha = 0.1,
+             geom = "polygon") +
+  scale_colour_brewer(palette = "Set1",
+                      name = '',
+                      guide = 'none') +
+  scale_fill_brewer(palette = "Set1",
+                    name = '')  +
+  theme_minimal()
+
+
+
+# BM: some discrepancy found in artefact counts for
+
+ rev(sort(table(tl_final_area$area)))
+
+ rev(sort(table(tl_final_depth_area_unit$area)))
+
+
 #---------------------------------------------------------------
 # BM: we need a single sheet that has only the excavation data
 # such as excavation area, chronological level, depth, area of excavation
