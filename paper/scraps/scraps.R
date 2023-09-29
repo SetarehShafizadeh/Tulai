@@ -1,4 +1,21 @@
 
+# BM: new method to me! I found https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8858582/
+
+library(PCAtest)
+
+result <-
+  PCAtest(pca_data,
+          100,
+          100,
+          0.05,
+          varcorr=FALSE,
+          counter=FALSE,
+          plot=TRUE)
+#>
+
+
+
+#---------------------------------------------------------------
 # BM: PCA plot with convex hulls (I thought we did this already
 # in our meeting because I can see the plot in the google doc
 # but seems we didn't save-commit-push it?)
@@ -26,6 +43,8 @@ ggbiplot(
   scale_fill_brewer(palette = "Set1",
                     name = '')  +
   theme_minimal()
+
+
 
 
 
