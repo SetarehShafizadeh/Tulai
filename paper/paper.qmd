@@ -13,25 +13,29 @@ title-block-published: "last updated"
 
 ```{r}
 # load libraries
-library(tidyverse)
 library(here)
 library(ggpmisc)
 library(ggrepel)
 library(ggbeeswarm)
 library(cowplot)
 library(knitr)
+library(ggcorrplot)
+library(ggpubr)
+library(ggbiplot)
+library(tidyverse) # load this last to minimize conflicts
 ```
 
 Import the data
 
 ```{r}
 # Read the data
-tl <- read_csv(here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
+tl <- read_csv(here::here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
 
 # this file is prepared from the google sheet here
 # https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
 # and simplified using code in the scraps.R file
-excavation_data <- read_csv(here("data//raw-data/excavation_data.csv"))
+excavation_data <- 
+  read_csv(here::here("data//raw-data/excavation_data.csv"))
 ```
 
 Clean the data
@@ -450,11 +454,11 @@ tl4 <- tl4 %>%
                    "Semi-Abrupt") ~ NA_character_,
       TRUE ~ SHINE
     ),
-    Utilization = if_else(Utilization == "0", NA_character_, Utilization),
-    Retouch =     if_else(Retouch == "0", NA_character_, Retouch),
-    SHINE =       if_else(SHINE == "0", NA_character_, SHINE),
-    shine2 =      if_else(shine2 == "0", NA_character_, shine2),
-    Blank2 =      if_else(Blank2 == "0", NA_character_, Blank2)
+    Utilization = if_else(Utilization == "0", NA, Utilization),
+    Retouch =     if_else(Retouch ==     "0", NA, Retouch),
+    SHINE =       if_else(SHINE ==       "0", NA, SHINE),
+    shine2 =      if_else(shine2 ==      "0", NA, shine2),
+    Blank2 =      if_else(Blank2 ==      "0", NA, Blank2)
   ) %>% 
   mutate(
     SHINE = na_if(SHINE, "")
@@ -1103,9 +1107,9 @@ tl4 <- tl4 %>%
 # refine the table
 
 tl_final <- tl4 %>%
-  rename(
+  dplyr::rename(
     blank =                Blank2,
-   `sickle shine` =       shine2,
+   `sickle shine` =        shine2,
     length =              `Length (mm)` ,
     width =               `Width (mm)`,
     thickness =           `Thickness (mm)`, 
@@ -1492,17 +1496,12 @@ tl_final <- tl_final %>%
 
 
 # take a look
- rev(sort(table(tl_final$core)))
- rev(sort(table(tl_final$corefrag)))
- rev(sort(table(tl_final$`core-fragment`)))
- rev(sort(table(tl_final$`core-typology`)))
- rev(sort(table(tl_final$blank)))
+ # rev(sort(table(tl_final$core)))
+ # rev(sort(table(tl_final$corefrag)))
+ # rev(sort(table(tl_final$`core-fragment`)))
+ # rev(sort(table(tl_final$`core-typology`)))
+ # rev(sort(table(tl_final$blank)))
 ```
-
-```{r}
-
-```
-
 
 
 ### Summary tables of the lithic assemblages
@@ -1513,7 +1512,7 @@ tl_final <- tl_final %>%
 # Create a summary table
 summary_table_area <- tl_final %>%
   group_by(area) %>%
-  summarise(
+  dplyr::summarise(
    `Cores (n)` = sum((!is.na(`core-typology`) & `core-typology` != "") |
                       (!is.na(core) & core != ""), na.rm = TRUE),  # Summing variables from both columns
     `Core rejuvenations pieces (n)` = sum(!is.na(corefrag) &
@@ -1532,13 +1531,13 @@ tl_final_area <- tl_final %>%
 
 summary_table_area_filtered <- 
   summary_table_area %>%
-  filter(area %in% c("ta", "d1", "tp1")) 
+  dplyr::filter(area %in% c("ta", "d1", "tp1")) 
 
 # BM: export this table as a CSV to paste into the 
 # drafting document to prepare for submission
 
 write_csv(summary_table_area_filtered,
-          here("data/derived-data/tbl-001-summary_table_area_filtered.csv"))
+          here::here("data/derived-data/tbl-001-summary_table_area_filtered.csv"))
 
 # BM: this is table 1 in the manuscript
 knitr::kable(summary_table_area_filtered,
@@ -1548,7 +1547,40 @@ knitr::kable(summary_table_area_filtered,
 
 ```{r}
 
+# chi-square test for different frequencies of tool type groups 
+# by area
+  summary_table_area_filtered_for_chi_square <- 
+  summary_table_area_filtered %>% 
+  pivot_longer(-area) %>% 
+  pivot_wider(names_from = "area") %>% 
+  select(-name) 
+
+chisq <- 
+  chisq.test(summary_table_area_filtered_for_chi_square)
+
+rownames(chisq$residuals) <- 
+   summary_table_area_filtered %>% 
+  pivot_longer(-area) %>% 
+  pivot_wider(names_from = "area") %>% 
+  pull(name)  %>% 
+  str_remove("\\(n\\)")
+
+ggcorrplot(chisq$residuals,
+           method = 'circle') + 
+  ggplot2::scale_fill_gradient2(
+    low = 'red',
+    high = 'royalblue',
+    mid = 'white',
+    midpoint = 0,
+    limit = c(-7, 11),
+    space = "Lab",
+    name = "Residual"
+  ) + 
+  coord_flip()
+
 ```
+
+A Chi-square test on the frequency of major lithic types by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_area_filtered_for_chi_square)`). Figure XXX shows that there are fewer utlized pieces and flakes in d1 than expected, and more flakes and fewer cores and blades in tp1 than expected assuming a null hypothesis of no difference between the areas.
 
 #### Techno-typological classes by excavation area
 
@@ -1571,7 +1603,7 @@ summary_table_tool_area <- summary_table_tool_area %>%
 
 total_row <- summary_table_tool_area %>%
   select(-tooltypegroup) %>%
-  summarise(across(everything(), \(x) sum(x, na.rm = TRUE))) %>%
+  dplyr::summarise(across(everything(), \(x) sum(x, na.rm = TRUE))) %>%
   mutate(tooltypegroup = "Total")
 
 summary_table_tool_area <-
@@ -1581,15 +1613,47 @@ summary_table_tool_area <-
 # drafting document to prepare for submission
 
 write_csv(summary_table_tool_area,
-          here("data/derived-data/tbl-002-summary_table_tool_area.csv"))
+          here::here("data/derived-data/tbl-002-summary_table_tool_area.csv"))
 
 kable(
   summary_table_tool_area,
   col.names = c("Tools", "D1", "TA", "TP1", "Total"),
   caption = "Tool Typology in the three main areas")
+```
+
+```{r}
+
+# chi-square test for different frequencies of tool type groups 
+# by area
+  summary_table_tool_area_for_chi_square <- 
+  summary_table_tool_area %>% 
+  filter(!tooltypegroup == "Total") %>% 
+  select(d1, ta, tp1) 
+
+chisq <- 
+  chisq.test(summary_table_tool_area_for_chi_square)
+
+rownames(chisq$residuals) <- 
+  summary_table_tool_area %>% 
+  filter(!tooltypegroup == "Total") %>% 
+  pull(tooltypegroup)
+
+ggcorrplot(chisq$residuals,
+           method = 'circle') + 
+  ggplot2::scale_fill_gradient2(
+    low = 'red',
+    high = 'royalblue',
+    mid = 'white',
+    midpoint = 0,
+    limit = c(-7, 11),
+    space = "Lab",
+    name = "Residual"
+  ) + 
+  coord_flip()
 
 ```
 
+A Chi-square test on the frequency of tool type groups by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_tool_area_for_chi_square)`). Figure XXX shows that there are more geomeric pieces and burins in d1 than expected, and more backed and retouched pieces in tp1 than expected assuming a null hypothesis of no difference between the areas. 
 
 ```{r}
 # Manually calculate the totals for each area and grand total
@@ -1613,6 +1677,11 @@ summary_table_tool_area_percentage <- summary_table_tool_area_percentage %>%
   select(tooltypegroup, percent_d1, percent_ta, percent_tp1, total_percent)
 
 # write the percentage table to a CSV file
+<<<<<<< HEAD
+=======
+write_csv(summary_table_tool_area_percentage,
+          here::here("data/derived-data/tbl-002-summary_table_tool_area_percentage.csv"))
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
 
 
 ```
@@ -1678,7 +1747,7 @@ excavation_data_volume %>%
 tl_final_excavation_data_volume_artefact_counts <- 
 tl_final_excavation_data_volume %>% 
   group_by(label2) %>% 
-   summarise(
+   dplyr::summarise(
     blade_count =              sum(blank == "blade", na.rm = TRUE),
     flake_count =              sum(blank == "flake", na.rm = TRUE),
     bladelet_count =           sum(blank == "bladelet", na.rm = TRUE),
@@ -1785,7 +1854,7 @@ WABI_Level
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-ggsave(here("figures/fig-wabi-plot.jpg"),
+ggsave(here::here("figures/fig-wabi-plot.jpg"),
        h = 6, 
        w = 8)
 
@@ -1866,7 +1935,7 @@ plot_grid(plotlist = contribution_plots,
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
-ggsave(here("figures/fig-contribution-plots.jpg"),
+ggsave(here::here("figures/fig-contribution-plots.jpg"),
        h = 6, 
        w = 8)
 
@@ -1905,7 +1974,7 @@ eigen_df[, 2:4] <- round(eigen_df[, 2:4], 2)
 # drafting document to prepare for submission
 
 write_csv(eigen_df,
-          here("data/derived-data/tbl-003-pca-eigenvalues.csv"))
+          here::here("data/derived-data/tbl-003-pca-eigenvalues.csv"))
 
 
 # Creating the kable output
@@ -1930,12 +1999,16 @@ rownames(res.pca$ind$coord) <-
 excavation_area <- 
   str_extract(sum_depth_sheet_subset$label2, 
               "[^_]+")
+pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
+<<<<<<< HEAD
 library(ggpubr)
 library(ggbiplot)
 
 pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
+=======
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
 biplot_modified <- 
 ggbiplot(
   pca_data.pca,
@@ -1943,8 +2016,12 @@ ggbiplot(
   var.scale = 1,
   groups = excavation_area,
   ellipse = FALSE,
+<<<<<<< HEAD
   circle = TRUE
 ) +
+=======
+  circle = TRUE) +
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
   stat_chull(aes(color = excavation_area,
                  fill = excavation_area),
              alpha = 0.1,
@@ -1962,8 +2039,12 @@ biplot_modified
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
 
+<<<<<<< HEAD
 ggsave(plot = biplot_modified,
        filename = here::here("figures/fig-pca-biplot.jpg"),
+=======
+ggsave(here::here("figures/fig-pca-biplot.jpg"),
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
        h = 6, 
        w = 8)
 

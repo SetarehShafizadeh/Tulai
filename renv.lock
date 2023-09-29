@@ -109,6 +109,26 @@
       ],
       "Hash": "26749bd5c7c4123dd23aeb9159be22d6"
     },
+    "PCAtest": {
+      "Package": "PCAtest",
+      "Version": "0.0.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "PCAtest",
+      "RemoteUsername": "arleyc",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "854b2d3720b7c01665ea316b681b846b624f6dd7",
+      "Requirements": [
+        "MASS",
+        "R",
+        "grDevices",
+        "graphics",
+        "stats",
+        "utils"
+      ],
+      "Hash": "304f40a78b39beb8fbd843bf96ca6a3c"
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -154,6 +174,17 @@
       ],
       "Hash": "1e035db628cefb315c571202d70202fe"
     },
+    "Rmisc": {
+      "Package": "Rmisc",
+      "Version": "1.5.1",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "lattice",
+        "plyr"
+      ],
+      "Hash": "c3c3d6c3abc276bc7849835d5d54c44d"
+    },
     "SparseM": {
       "Package": "SparseM",
       "Version": "1.81",
@@ -191,6 +222,26 @@
         "utils"
       ],
       "Hash": "4f57884290cc75ab22f4af9e9d4ca862"
+    },
+    "apastats": {
+      "Package": "apastats",
+      "Version": "0.3",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "apastats",
+      "RemoteUsername": "achetverikov",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "448bb214274ee3837c58fd1238b336076552d918",
+      "RemoteSubdir": "apastats",
+      "Requirements": [
+        "Rmisc",
+        "ggplot2",
+        "gridExtra",
+        "stats",
+        "stringr"
+      ],
+      "Hash": "2c824ee79efc8e71fc2a6ecd1ecdd1db"
     },
     "askpass": {
       "Package": "askpass",
@@ -895,6 +946,37 @@
         "vipor"
       ],
       "Hash": "899f28fe0388b7f687d7453429c2474d"
+    },
+    "ggbiplot": {
+      "Package": "ggbiplot",
+      "Version": "0.55",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "ggbiplot",
+      "RemoteUsername": "vqv",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "7325e880485bea4c07465a0304c470608fffb5d9",
+      "Requirements": [
+        "ggplot2",
+        "grid",
+        "plyr",
+        "scales"
+      ],
+      "Hash": "15a56f59159161ce6ec761f9deef8e78"
+    },
+    "ggcorrplot": {
+      "Package": "ggcorrplot",
+      "Version": "0.1.4.1",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "R",
+        "ggplot2",
+        "reshape2",
+        "stats"
+      ],
+      "Hash": "aad38d027d0dd18621e213919c20a65f"
     },
     "ggplot2": {
       "Package": "ggplot2",

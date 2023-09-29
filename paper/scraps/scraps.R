@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 #BM: explore PCA with hulls
 # library(devtools)
 # install_github("vqv/ggbiplot")
@@ -9,6 +10,56 @@ wine.pca <- prcomp(pca_data, scale. = TRUE)
 
 ggbiplot(
   wine.pca,
+=======
+# BM: new method to me! I found https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8858582/
+
+library(PCAtest)
+
+result <-
+  PCAtest(pca_data,
+          100,
+          100,
+          0.05,
+          varcorr=FALSE,
+          counter=FALSE,
+          plot=TRUE)
+
+
+# PerMANOVA - partitioning the euclidean distance matrix by species
+# from https://stackoverflow.com/a/20267537/1036500
+library(vegan)
+
+pca_data_for_post_hoc_testing <-
+pca_data %>%
+  add_column(excavation_area)
+
+# Is there are significant difference in the groups that
+# we see in the PCA?
+PerMANOVA_results <-
+adonis2(pca_data[, 1:5] ~ excavation_area,
+        data = pca_data_for_post_hoc_testing,
+        method='eu')
+
+# Which specific pairs of groups differ from each other?
+# https://github.com/pmartinezarbizu/pairwiseAdonis
+library(pairwiseAdonis)
+pairwise.adonis2_results <-
+pairwise.adonis2(pca_data[, 1:5] ~ excavation_area,
+                data = pca_data_for_post_hoc_testing)
+
+#---------------------------------------------------------------
+# BM: PCA plot with convex hulls (I thought we did this already
+# in our meeting because I can see the plot in the google doc
+# but seems we didn't save-commit-push it?)
+
+library(ggpubr)
+library(ggbiplot)
+data(wine)
+pca_data.pca <- prcomp(pca_data, scale. = TRUE)
+
+ggbiplot(
+  pca_data.pca,
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
   obs.scale = 1,
   var.scale = 1,
   groups = excavation_area,
@@ -28,11 +79,14 @@ ggbiplot(
 
 
 
+<<<<<<< HEAD
 # BM: some discrepancy found in artefact counts for
 
  rev(sort(table(tl_final_area$area)))
 
  rev(sort(table(tl_final_depth_area_unit$area)))
+=======
+>>>>>>> af55b91edd04c2dc750f6f8fc8ab9d8a7c9f59ab
 
 
 #---------------------------------------------------------------
