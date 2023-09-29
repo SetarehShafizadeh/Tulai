@@ -20,6 +20,9 @@ library(ggrepel)
 library(ggbeeswarm)
 library(cowplot)
 library(knitr)
+library(ggcorrplot)
+library(ggpubr)
+library(ggbiplot)
 ```
 
 Import the data
@@ -1548,7 +1551,40 @@ knitr::kable(summary_table_area_filtered,
 
 ```{r}
 
+# chi-square test for different frequencies of tool type groups 
+# by area
+  summary_table_area_filtered_for_chi_square <- 
+  summary_table_area_filtered %>% 
+  pivot_longer(-area) %>% 
+  pivot_wider(names_from = "area") %>% 
+  select(-name) 
+
+chisq <- 
+  chisq.test(summary_table_area_filtered_for_chi_square)
+
+rownames(chisq$residuals) <- 
+   summary_table_area_filtered %>% 
+  pivot_longer(-area) %>% 
+  pivot_wider(names_from = "area") %>% 
+  pull(name)  %>% 
+  str_remove("\\(n\\)")
+
+ggcorrplot(chisq$residuals,
+           method = 'circle') + 
+  ggplot2::scale_fill_gradient2(
+    low = 'red',
+    high = 'royalblue',
+    mid = 'white',
+    midpoint = 0,
+    limit = c(-7, 11),
+    space = "Lab",
+    name = "Residual"
+  ) + 
+  coord_flip()
+
 ```
+
+A Chi-square test on the frequency of major lithic types by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_area_filtered_for_chi_square)`). Figure XXX shows that there are fewer utlized pieces and flakes in d1 than expected, and more flakes and fewer cores and blades in tp1 than expected assuming a null hypothesis of no difference between the areas.
 
 #### Techno-typological classes by excavation area
 
@@ -1587,9 +1623,41 @@ kable(
   summary_table_tool_area,
   col.names = c("Tools", "D1", "TA", "TP1", "Total"),
   caption = "Tool Typology in the three main areas")
+```
+
+```{r}
+
+# chi-square test for different frequencies of tool type groups 
+# by area
+  summary_table_tool_area_for_chi_square <- 
+  summary_table_tool_area %>% 
+  filter(!tooltypegroup == "Total") %>% 
+  select(d1, ta, tp1) 
+
+chisq <- 
+  chisq.test(summary_table_tool_area_for_chi_square)
+
+rownames(chisq$residuals) <- 
+  summary_table_tool_area %>% 
+  filter(!tooltypegroup == "Total") %>% 
+  pull(tooltypegroup)
+
+ggcorrplot(chisq$residuals,
+           method = 'circle') + 
+  ggplot2::scale_fill_gradient2(
+    low = 'red',
+    high = 'royalblue',
+    mid = 'white',
+    midpoint = 0,
+    limit = c(-7, 11),
+    space = "Lab",
+    name = "Residual"
+  ) + 
+  coord_flip()
 
 ```
 
+A Chi-square test on the frequency of tool type groups by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_tool_area_for_chi_square)`). Figure XXX shows that there are more geomeric pieces and burins in d1 than expected, and more backed and retouched pieces in tp1 than expected assuming a null hypothesis of no difference between the areas. 
 
 ```{r}
 # Manually calculate the totals for each area and grand total
