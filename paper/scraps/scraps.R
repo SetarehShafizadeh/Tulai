@@ -11,9 +11,26 @@ result <-
           varcorr=FALSE,
           counter=FALSE,
           plot=TRUE)
-#>
 
 
+# PerMANOVA - partitioning the euclidean distance matrix by species
+# from https://stackoverflow.com/a/20267537/1036500
+library(vegan)
+
+pca_data_for_post_hoc_testing <-
+pca_data %>%
+  add_column(excavation_area)
+
+PerMANOVA_results <-
+adonis2(pca_data[, 1:5] ~ excavation_area,
+        data = pca_data_for_post_hoc_testing,
+        method='eu')
+
+
+library(pairwiseAdonis)
+pairwise.adonis2_results <-
+pairwise.adonis2(pca_data[, 1:5] ~ excavation_area,
+                data = pca_data_for_post_hoc_testing)
 
 #---------------------------------------------------------------
 # BM: PCA plot with convex hulls (I thought we did this already
