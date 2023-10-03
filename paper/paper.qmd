@@ -1910,6 +1910,37 @@ res.pca <- PCA(pca_data, graph = FALSE)
 # summary(res.pca)
 ```
 
+
+```{r}
+# PCA test
+# BM: new method to me! I found https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8858582/
+
+library(PCAtest)
+
+# compute the tests and save the plot
+jpeg( filename = here::here("figures/fig-pca-tests.jpg"),
+      height  = 6, 
+      width = 8,
+      units = "in", 
+      res = 900)
+
+result <-
+  PCAtest(pca_data,
+          1000,
+          1000,
+          0.05,
+          varcorr=FALSE,
+          counter=FALSE,
+          plot=TRUE)
+
+
+dev.off()
+
+knitr::include_graphics(here::here("figures/fig-pca-tests.jpg"))
+
+```
+
+
 ```{r}
 #| label: pca-contrib
 #| fig-cap: "PCA contribution plots"
