@@ -2154,11 +2154,7 @@ knitr::kable(pairwise.adonis2_results_tbl,
 
 ```
 
-<<<<<<< HEAD
 A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`r PerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statisically indistinguishable (@tbl-permanova )
- 
-=======
-A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`rPerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statisically indistinguishable (@tbl-permanova )
 
->>>>>>> f9e10d50d9f7ecb5f082889d073484c3a1105946
+
  
