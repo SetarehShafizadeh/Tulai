@@ -1970,6 +1970,31 @@ ggsave(here::here("figures/fig-contribution-plots.jpg"),
 ```
 
 ```{r}
+
+# SS: get the contributions of each variable to the first two principal components, which we can then use in the text.
+
+res.pca <- PCA(pca_data)
+
+# Contributions of variables to dimension 1 and 2:
+contrib_dim1 <- res.pca$var$contrib[, 1]
+contrib_dim2 <- res.pca$var$contrib[, 2]
+contrib_dim3 <- res.pca$var$contrib[, 3]
+contrib_dim4 <- res.pca$var$contrib[, 4]
+contrib_dim5 <- res.pca$var$contrib[, 5]
+
+# To view the contributions:
+contrib_dim1
+contrib_dim2
+contrib_dim3
+contrib_dim4
+contrib_dim5
+
+```
+
+
+
+```{r}
+
 # screeplot; inspect distribution of PCs
 fviz_screeplot(res.pca)
 ```
@@ -2014,7 +2039,9 @@ kable_output <- kable(eigen_df,
   caption = "Eigenvalues and percentage of variance for each dimension of PCA")
 
 # Display the table
-kable_output
+
+kable_output 
+
 ```
 
 ```{r}
@@ -2065,6 +2092,7 @@ ggsave(plot = biplot_modified,
        w = 8)
 
 ```
+
 
 
 ```{r}
@@ -2126,6 +2154,11 @@ knitr::kable(pairwise.adonis2_results_tbl,
 
 ```
 
+<<<<<<< HEAD
 A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`r PerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statisically indistinguishable (@tbl-permanova )
  
+=======
+A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`rPerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statisically indistinguishable (@tbl-permanova )
+
+>>>>>>> f9e10d50d9f7ecb5f082889d073484c3a1105946
  
