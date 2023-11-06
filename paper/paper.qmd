@@ -104,7 +104,7 @@ ggplot(data = world) +
            ymax = bbox[4],
            fill = NA,
            colour = "red",
-           size = 1.5
+           linewidth = 1.5
   ) +
   theme_void() +
   theme(panel.background = element_rect(fill = "white"))
@@ -137,8 +137,6 @@ Display the map
 #| out-width: "400px"
 knitr::include_graphics(here::here("figures/site-map.png"))
 ```
-
-
 
 Clean the data
 
@@ -1680,6 +1678,13 @@ ggcorrplot(chisq$residuals,
   ) + 
   coord_flip()
 
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here::here("figures/fig-chi-sq-residuals-tool-type-freqs1.jpg"),
+       h = 4, 
+       w = 4)
+
 ```
 
 A Chi-square test on the frequency of major lithic types by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_area_filtered_for_chi_square)`). Figure XXX shows that there are fewer utlized pieces and flakes in d1 than expected, and more flakes and fewer cores and blades in tp1 than expected assuming a null hypothesis of no difference between the areas.
@@ -1723,6 +1728,8 @@ kable(
   caption = "Tool Typology in the three main areas")
 ```
 
+BM: I don't understand what is the difference between the two chi-square tests where have here (above and below). Can you please clarify?
+
 ```{r}
 
 # chi-square test for different frequencies of tool type groups 
@@ -1752,6 +1759,13 @@ ggcorrplot(chisq$residuals,
     name = "Residual"
   ) + 
   coord_flip()
+
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here::here("figures/fig-chi-sq-residuals-tool-type-freqs2.jpg"),
+       h = 4, 
+       w = 4)
 
 ```
 
