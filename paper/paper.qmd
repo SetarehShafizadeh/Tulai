@@ -30,12 +30,112 @@ Import the data
 ```{r}
 # Read the data
 tl <- read_csv(here::here("data/raw-data/Tulai_Lithic_Assamblage.csv"))
+site_locations <- read_csv(here::here("data/raw-data/Sites-mentioned-in-the-text.csv"))
 
 # this file is prepared from the google sheet here
 # https://docs.google.com/spreadsheets/d/1Q0QZESk412ZQLE24yPs6Rg-7Y9OMX63DHoXeIPNAIFM/edit#gid=0
 # and simplified using code in the scraps.R file
 excavation_data <- 
-  read_csv(here::here("data//raw-data/excavation_data.csv"))
+  read_csv(here::here("data/raw-data/excavation_data.csv"))
+```
+
+Draw the map and save it
+
+```{r}
+#| eval: false
+
+# get map tiles from the internet, we only need to do this once and save them
+
+library(ggmap) # devtools::install_github("stadiamaps/ggmap")
+
+# using http://bboxfinder.com/ to get this
+bbox = c(
+  42, # left
+  30, # lower
+  51, # right
+  38) # upper
+
+# this takes a few minutes and needs an internet connection
+map <-
+  get_stadiamap(bbox = bbox,
+                zoom = 7)
+
+saveRDS(map, file = here::here("data/raw-data/map_tiles.rds"))
+
+# map with site names next to the points
+map_of_sites <-
+  ggmap(map)  +
+  geom_point(data = site_locations,
+             aes(y = `Longitude DD` ,
+                 x = `Latitude DD`),
+             colour = "red",
+             size = 2) +
+  # label points with site name
+  geom_text_repel(data = site_locations,
+             aes(y = `Longitude DD` ,
+                 x = `Latitude DD`,
+                      label = Site),
+                  size = 2,
+                  bg.color = "white",
+                  bg.r = 0.15) +
+  theme_minimal(base_size = 6) +
+  labs(x = "Longitute",
+       y = "Latitude") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+
+# inset world map, from
+# https://r-spatial.org/r/2018/10/25/ggplot2-sf.html
+library(sf)
+library("rnaturalearth")
+library("rnaturalearthdata")
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+worldplot <- 
+ggplot(data = world) +
+     geom_sf(color = "black", 
+             fill = "white",
+             linewidth = 0.05) +
+    annotate("rect",
+           xmin = bbox[3],
+           xmax = bbox[1],
+           ymin = bbox[2],
+           ymax = bbox[4],
+           fill = NA,
+           colour = "red",
+           linewidth = 1.5
+  ) +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "white"))
+
+# combine site map and inset map
+library(cowplot)
+ggdraw() +
+  draw_plot(map_of_sites) +
+  draw_plot(plot = worldplot,
+            x = -0.02, # x location of inset placement
+            y = -0.06, # y location of inset placement
+            width = .6, # Inset width
+            height = .4, # Inset height
+            scale = 0.75 # Inset scale
+  ) +
+  theme(panel.background = element_rect(fill='white', colour="white"),
+        plot.background = element_rect(fill='white', colour="white"))
+
+ggsave(here::here("figures/site-map.png"),
+       width = 4.45,
+       height = 4.75,
+       units = "in")
+
+```
+
+Display the map
+
+```{r}
+#| label: fig-map
+#| out-width: "400px"
+knitr::include_graphics(here::here("figures/site-map.png"))
 ```
 
 Clean the data
@@ -1578,6 +1678,13 @@ ggcorrplot(chisq$residuals,
   ) + 
   coord_flip()
 
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here::here("figures/fig-chi-sq-residuals-tool-type-freqs1.jpg"),
+       h = 4, 
+       w = 4)
+
 ```
 
 A Chi-square test on the frequency of major lithic types by excavation area reveals a significant difference between the areas (`r apastats::describe.chi(summary_table_area_filtered_for_chi_square)`). Figure XXX shows that there are fewer utlized pieces and flakes in d1 than expected, and more flakes and fewer cores and blades in tp1 than expected assuming a null hypothesis of no difference between the areas.
@@ -1621,6 +1728,8 @@ kable(
   caption = "Tool Typology in the three main areas")
 ```
 
+BM: I don't understand what is the difference between the two chi-square tests where have here (above and below). Can you please clarify?
+
 ```{r}
 
 # chi-square test for different frequencies of tool type groups 
@@ -1650,6 +1759,13 @@ ggcorrplot(chisq$residuals,
     name = "Residual"
   ) + 
   coord_flip()
+
+# BM: save this figure to paste into the 
+# drafting document to prepare for submission
+
+ggsave(here::here("figures/fig-chi-sq-residuals-tool-type-freqs2.jpg"),
+       h = 4, 
+       w = 4)
 
 ```
 
@@ -2045,6 +2161,8 @@ kable_output
 ```
 
 ```{r}
+#| label: fig-pca-biplot
+
 library(ggrepel)
 
 rownames(res.pca$ind$coord) <- 
@@ -2054,12 +2172,14 @@ rownames(res.pca$ind$coord) <-
 excavation_area <- 
   str_extract(sum_depth_sheet_subset$label2, 
               "[^_]+")
-pca_data.pca <- prcomp(pca_data, scale. = TRUE)
 
 library(ggpubr)
 library(ggbiplot)
 
-pca_data.pca <- prcomp(pca_data, scale. = TRUE)
+names(pca_data) <- str_replace_all(names(pca_data), "_", " ")
+
+pca_data.pca <- prcomp(pca_data, scale = TRUE)
+
 
 biplot_modified <- 
 ggbiplot(
@@ -2078,7 +2198,11 @@ ggbiplot(
                       guide = 'none') +
   scale_fill_brewer(palette = "Set1",
                     name = '')  +
-  theme_minimal()
+  scale_x_continuous(limit = c(-6, 3.5)) +
+  scale_y_continuous(limit = c(-3, 3)) +
+  theme_minimal() +
+  theme(legend.position = c(0.1, 0.9),
+        legend.background = element_rect(fill = "white", linewidth = 0)) 
 
 # Display the plot
 biplot_modified
@@ -2097,6 +2221,8 @@ ggsave(plot = biplot_modified,
 
 ```{r}
 #| label: tbl-permanova
+
+set.seed(0411)
 
 # PerMANOVA - partitioning the euclidean distance matrix by species
 # from https://stackoverflow.com/a/20267537/1036500
