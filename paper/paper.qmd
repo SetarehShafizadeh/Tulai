@@ -51,9 +51,9 @@ library(ggmap) # devtools::install_github("stadiamaps/ggmap")
 # using http://bboxfinder.com/ to get this
 bbox = c(
   42, # left
-  30, # lower
-  51, # right
-  38) # upper
+  31, # lower
+  50, # right
+  37) # upper
 
 # this takes a few minutes and needs an internet connection
 map <-
