@@ -1667,6 +1667,8 @@ rownames(chisq$residuals) <-
 
 ggcorrplot(chisq$residuals,
            method = 'circle') + 
+  scale_y_discrete(labels = function(y) str_to_upper(y)) +  
+  scale_x_discrete(labels = function(x) str_to_lower(x)) +   
   ggplot2::scale_fill_gradient2(
     low = 'red',
     high = 'royalblue',
@@ -1677,6 +1679,7 @@ ggcorrplot(chisq$residuals,
     name = "Residual"
   ) + 
   coord_flip()
+
 
 # BM: save this figure to paste into the 
 # drafting document to prepare for submission
@@ -1749,6 +1752,8 @@ rownames(chisq$residuals) <-
 
 ggcorrplot(chisq$residuals,
            method = 'circle') + 
+  scale_y_discrete(labels = function(y) str_to_upper(y)) +  # Convert x axis labels to uppercase
+  scale_x_discrete(labels = function(x) str_to_lower(x)) +  # Convert x axis labels to uppercase
   ggplot2::scale_fill_gradient2(
     low = 'red',
     high = 'royalblue',
