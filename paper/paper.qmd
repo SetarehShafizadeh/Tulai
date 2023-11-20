@@ -104,7 +104,7 @@ ggplot(data = world) +
            ymax = bbox[4],
            fill = NA,
            colour = "red",
-           linewidth = 1.5
+           linewidth = 0.5
   ) +
   theme_void() +
   theme(panel.background = element_rect(fill = "white"))
@@ -115,7 +115,7 @@ ggdraw() +
   draw_plot(map_of_sites) +
   draw_plot(plot = worldplot,
             x = -0.02, # x location of inset placement
-            y = -0.06, # y location of inset placement
+            y = 0.02, # y location of inset placement
             width = .6, # Inset width
             height = .4, # Inset height
             scale = 0.75 # Inset scale
