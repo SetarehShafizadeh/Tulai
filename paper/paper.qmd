@@ -138,7 +138,7 @@ ggsave(here::here("figures/site-map.png"),
        width = 4.45,
        height = 4.75,
        units = "in", 
-       dpi = 300
+       dpi = 600
        )
 
 ```
