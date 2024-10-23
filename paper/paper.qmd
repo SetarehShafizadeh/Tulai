@@ -2012,6 +2012,21 @@ ggsave(here::here("figures/fig-wabi-plot.jpg"),
 
 ```
 
+
+```{r}
+# Set the environment variable for GDAL
+Sys.setenv(GDAL_CONFIG = "/path/to/your/conda/env/bin/gdal-config")
+
+# Install the 'terra' package
+install.packages("terra")
+
+```
+
+
+
+
+
+
 ### Compute PCA
 
 ```{r}
@@ -2058,6 +2073,8 @@ sum_depth_sheet_subset %>%
          retouch_frequency = log(retouch_frequency + 0.001),
          tool_diversity = log(tool_diversity + 0.001)) %>% 
 
+  
+  
   select(`lithic\ndensity` = lithic_density, 
          `core\nfrequency` = core_frequency, 
          `blank\nfrequency` = blank_frequency, 
@@ -2137,6 +2154,11 @@ ggsave(here::here("figures/fig-contribution-plots.jpg"),
        w = 8)
 
 ```
+
+```{r}
+
+```
+
 
 
 ```{r}
@@ -2285,6 +2307,9 @@ ggsave(
 
 ```
 
+```{r}
+
+```
 
 
 ```{r}
@@ -2352,4 +2377,88 @@ knitr::kable(pairwise.adonis2_results_tbl,
 A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`r PerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statistically indistinguishable (@tbl-permanova )
 
 
+
+
+# Correspondence Analysis (CA)
+```{r}
+# Example of a contingency table
+lithic_data <- matrix(c(30, 20, 50, 
+                        15, 25, 35,
+                        45, 10, 30), 
+                      nrow = 3, byrow = TRUE)
+colnames(lithic_data) <- c("Cores", "Blades", "Flakes")
+rownames(lithic_data) <- c("Unit1", "Unit2", "Unit3")
+
+```
+
+
+
+```{r}
+# Perform Correspondence Analysis
+res.ca <- CA(lithic_data, graph = FALSE)
+
+# View the summary results
+summary(res.ca)
+
+```
  
+```{r}
+# Plot the CA biplot
+fviz_ca_biplot(res.ca, repel = TRUE)
+
+```
+ 
+# contribution plots
+```{r}
+# Example lithic data matrix
+lithic_data <- matrix(c(30, 20, 50, 
+                        15, 25, 35,
+                        45, 10, 30), 
+                      nrow = 3, byrow = TRUE)
+colnames(lithic_data) <- c("Cores", "Blades", "Flakes")
+rownames(lithic_data) <- c("Unit1", "Unit2", "Unit3")
+
+# Perform Correspondence Analysis (CA)
+res.ca <- CA(lithic_data, graph = FALSE)
+
+
+```
+
+
+```{r}
+# Contribution of rows to Dimension 1
+fviz_contrib(res.ca, choice = "row", axes = 1, top = 3)
+
+# Contribution of rows to Dimension 2
+fviz_contrib(res.ca, choice = "row", axes = 2, top = 3)
+```
+
+
+```{r}
+# Contribution of columns to Dimension 1
+fviz_contrib(res.ca, choice = "col", axes = 1, top = 3)
+
+# Contribution of columns to Dimension 2
+fviz_contrib(res.ca, choice = "col", axes = 2, top = 3)
+
+```
+
+```{r}
+# Combine the top contributing rows for both Dim1 and Dim2
+fviz_contrib(res.ca, choice = "row", axes = 1:2, top = 3)
+
+# Combine the top contributing columns for both Dim1 and Dim2
+fviz_contrib(res.ca, choice = "col", axes = 1:2, top = 3)
+
+```
+
+```{r}
+# Save the contribution plot for rows
+ggsave("contribution_plot_rows_Dim1.png", plot = fviz_contrib(res.ca, choice = "row", axes = 1, top = 3))
+
+# Save the contribution plot for columns
+ggsave("contribution_plot_cols_Dim1.png", plot = fviz_contrib(res.ca, choice = "col", axes = 1, top = 3))
+
+
+```
+
