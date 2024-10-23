@@ -49,6 +49,7 @@ excavation_data <-
 
 Draw the map and save it
 
+
 ```{r}
 #| eval: false
 
@@ -78,7 +79,7 @@ map_of_sites <-
              aes(y = `Longitude DD` ,
                  x = `Latitude DD`),
              colour = "red",
-             size = 2) +
+             size = 0.5) +
   # label points with site name
   geom_text_repel(data = site_locations,
              aes(y = `Longitude DD` ,
@@ -87,7 +88,7 @@ map_of_sites <-
                   size = 2,
                   bg.color = "white",
                   bg.r = 0.15) +
-  theme_minimal(base_size = 6) +
+  theme_minimal(base_size = 10) +
   labs(x = "Longitute",
        y = "Latitude") +
   theme(axis.title.x = element_blank(),
@@ -107,8 +108,8 @@ ggplot(data = world) +
              fill = "white",
              linewidth = 0.05) +
     annotate("rect",
-           xmin = bbox[3],
-           xmax = bbox[1],
+           xmin = bbox[1],
+           xmax = bbox[3],
            ymin = bbox[2],
            ymax = bbox[4],
            fill = NA,
@@ -135,9 +136,12 @@ ggdraw() +
 ggsave(here::here("figures/site-map.png"),
        width = 4.45,
        height = 4.75,
-       units = "in")
+       units = "in", 
+       dpi = 600
+       )
 
 ```
+
 
 Display the map
 
@@ -2156,9 +2160,6 @@ ggsave(here::here("figures/fig-contribution-plots.jpg"),
 
 ```
 
-```{r}
-
-```
 
 
 
