@@ -8,6 +8,7 @@ WORKDIR /Tulai
 COPY . /Tulai
 
 RUN  sudo apt-get update -y \
+  && sudo apt-get install -y libudunits2-dev \
   && R -e "install.packages(c('BiocManager', 'remotes'), repos = c(CRAN = 'https://cloud.r-project.org'))" \
   && R -e "remotes::install_github(c('rstudio/renv', 'quarto-dev/quarto-r'))" \
   # install pkgs we need
