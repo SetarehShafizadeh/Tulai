@@ -6,14 +6,14 @@ knitr::opts_chunk$set(
 )
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  renv::settings$snapshot.type("all")
+# renv::settings$snapshot.type("all")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  renv::settings$ignored.packages("<package>")
+# renv::settings$ignored.packages("<package>")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  renv::settings$snapshot.type("explicit")
+# renv::settings$snapshot.type("explicit")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  renv::install()
+# renv::install()
 

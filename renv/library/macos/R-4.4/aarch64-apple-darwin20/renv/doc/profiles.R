@@ -6,5 +6,5 @@ knitr::opts_chunk$set(
 )
 
 ## -----------------------------------------------------------------------------
-#  renv::settings$snapshot.type("explicit")
+# renv::settings$snapshot.type("explicit")
 

@@ -6,8 +6,8 @@ config                  User-level settings
 consent                 Consent to usage of renv
 dependencies            Find R package dependencies in a project
 diagnostics             Print a diagnostics report
-embed                   Capture and re-use dependencies within a '.R'
-                        or '.Rmd'
+embed                   Capture and re-use dependencies within a '.R',
+                        '.Rmd' or '.qmd'
 history                 View and revert to a historical lockfile
 imbue                   Imbue an renv Installation
 init                    Use renv in a project

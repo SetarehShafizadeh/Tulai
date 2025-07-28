@@ -8,6 +8,6 @@ knitr::opts_chunk$set(
 knitr::include_graphics("renv.png", dpi = 144)
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  root <- renv::paths$root()
-#  unlink(root, recursive = TRUE)
+# root <- renv::paths$root()
+# unlink(root, recursive = TRUE)
 
