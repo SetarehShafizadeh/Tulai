@@ -2019,17 +2019,15 @@ ggsave(here::here("figures/fig-wabi-plot.jpg"),
 
 
 ```{r}
+# BM: What are these doing here? Not appropriate for a literate programming context. These are for interactive use, in the console. 
+
 # Set the environment variable for GDAL
-Sys.setenv(GDAL_CONFIG = "/path/to/your/conda/env/bin/gdal-config")
+# Sys.setenv(GDAL_CONFIG = "/path/to/your/conda/env/bin/gdal-config")
 
 # Install the 'terra' package
-install.packages("terra")
+# install.packages("terra")
 
 ```
-
-
-
-
 
 
 ### Compute PCA
@@ -2160,9 +2158,6 @@ ggsave(here::here("figures/fig-contribution-plots.jpg"),
 
 ```
 
-
-
-
 ```{r}
 
 # SS: get the contributions of each variable to the first two principal components, which we can then use in the text.
@@ -2184,8 +2179,6 @@ contrib_dim4
 contrib_dim5
 
 ```
-
-
 
 ```{r}
 
@@ -2309,10 +2302,6 @@ ggsave(
 
 ```
 
-```{r}
-
-```
-
 
 ```{r}
 #| label: tbl-permanova
@@ -2376,12 +2365,10 @@ knitr::kable(pairwise.adonis2_results_tbl,
 
 ```
 
-A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`r PerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statistically indistinguishable (@tbl-permanova )
-
-
-
+A permutation MANOVA indicates that there is a significant difference in the lithic assemblage composition across the three excavation areas (`r PerMANOVA_results_inline`). We investigated this further using pairwise post-hoc tests and found that this significant difference is between TA and TP1, with the other two areas being statistically indistinguishable (@tbl-permanova)
 
 # Correspondence Analysis (CA)
+
 ```{r}
 # Example of a contingency table
 lithic_data <- matrix(c(30, 20, 50, 
@@ -2392,8 +2379,6 @@ colnames(lithic_data) <- c("Cores", "Blades", "Flakes")
 rownames(lithic_data) <- c("Unit1", "Unit2", "Unit3")
 
 ```
-
-
 
 ```{r}
 # Perform Correspondence Analysis
@@ -2410,7 +2395,8 @@ fviz_ca_biplot(res.ca, repel = TRUE)
 
 ```
  
-# contribution plots
+# Contribution plots
+
 ```{r}
 # Example lithic data matrix
 lithic_data <- matrix(c(30, 20, 50, 
@@ -2426,7 +2412,6 @@ res.ca <- CA(lithic_data, graph = FALSE)
 
 ```
 
-
 ```{r}
 # Contribution of rows to Dimension 1
 fviz_contrib(res.ca, choice = "row", axes = 1, top = 3)
@@ -2434,7 +2419,6 @@ fviz_contrib(res.ca, choice = "row", axes = 1, top = 3)
 # Contribution of rows to Dimension 2
 fviz_contrib(res.ca, choice = "row", axes = 2, top = 3)
 ```
-
 
 ```{r}
 # Contribution of columns to Dimension 1
