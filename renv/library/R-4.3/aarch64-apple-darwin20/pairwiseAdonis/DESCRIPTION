@@ -1,0 +1,28 @@
+Package: pairwiseAdonis
+Title: Pairwise Multilevel Comparison using Adonis
+Version: 0.4.1
+Date: 2017-10-01
+Authors@R: person("Pedro", "Martinez Arbizu", email = "pmartinez@senckenberg.de", role = c("aut", "cre"))
+Description: This is a wrapper function for multilevel pairwise comparison using adonis() from package 'vegan'.
+			The function returns adjusted p-values using p.adjust().
+Depends: R (>= 3.0.0), vegan, cluster, stats, permute
+License: GPL-2 | GPL-3
+Encoding: UTF-8
+RoxygenNote: 7.1.2
+RemoteType: github
+RemoteHost: api.github.com
+RemoteRepo: pairwiseAdonis
+RemoteUsername: pmartinezarbizu
+RemoteRef: HEAD
+RemoteSha: cb190f7668a0c82c0b0853927db239e7b9ec3e83
+RemoteSubdir: pairwiseAdonis
+GithubRepo: pairwiseAdonis
+GithubUsername: pmartinezarbizu
+GithubRef: HEAD
+GithubSHA1: cb190f7668a0c82c0b0853927db239e7b9ec3e83
+GithubSubdir: pairwiseAdonis
+NeedsCompilation: no
+Packaged: 2024-10-19 09:45:16 UTC; Setareh
+Author: Pedro Martinez Arbizu [aut, cre]
+Maintainer: Pedro Martinez Arbizu <pmartinez@senckenberg.de>
+Built: R 4.3.1; ; 2024-10-19 09:45:16 UTC; unix

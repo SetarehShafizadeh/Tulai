@@ -1,0 +1,39 @@
+Package: PCAtest
+Title: Statistical significance of PCA
+Version: 0.0.2
+Authors@R: 
+    person(given = "Arley",
+           family = "Camargo",
+           role = c("aut", "cre"),
+           email = "arley.camargo@gmail.com",
+           comment = c(ORCID = "0000-0001-9082-6348"))
+Description: PCAtest is an R function that implements permutation-based
+        statistical tests to evaluate the overall significance of a PCA,
+        the significance of each PC axis, and the contributions of each
+        observed variable to the significant axes.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: graphics, grDevices, utils, stats, MASS
+Depends: R (>= 3.5.0)
+VignetteBuilder: knitr
+URL: https://arleyc.github.io/PCAtest/
+RemoteType: github
+RemoteHost: api.github.com
+RemoteRepo: PCAtest
+RemoteUsername: arleyc
+RemoteRef: HEAD
+RemoteSha: 7e10abe7c40db30241d2e5eb4de1c6c73e7a361d
+GithubRepo: PCAtest
+GithubUsername: arleyc
+GithubRef: HEAD
+GithubSHA1: 7e10abe7c40db30241d2e5eb4de1c6c73e7a361d
+NeedsCompilation: no
+Packaged: 2024-10-20 13:30:22 UTC; Setareh
+Author: Arley Camargo [aut, cre] (<https://orcid.org/0000-0001-9082-6348>)
+Maintainer: Arley Camargo <arley.camargo@gmail.com>
+Built: R 4.4.1; ; 2024-10-20 13:30:23 UTC; unix
