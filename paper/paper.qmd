@@ -56,7 +56,6 @@ Draw the map and save it
 # get map tiles from the internet, we only need to do this once and save them
 
 library(ggmap) # devtools::install_github("stadiamaps/ggmap")
-library(ggmap)
 ggmap::register_stadiamaps(key = "ca45118a-734f-480b-8c3c-8d82e5a361e3")
 
 # using http://bboxfinder.com/ to get this
